@@ -673,7 +673,7 @@ h1 > span:nth-child(3) {
   background: #fff8f3;
   padding: 1px 4px;
   border-radius: 3px;
-  font-weight: 600;
+  font: 400 1.125em / 1 var(--hand);
   text-decoration: underline;
   text-underline-offset: 3px;
   white-space: nowrap;
@@ -745,7 +745,7 @@ fieldset {
 }
 .attendance-options {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
 }
 .attendance-options label {
@@ -770,7 +770,7 @@ input[type="radio"] {
   margin: 0;
   flex-shrink: 0;
 }
-select:disabled {
+input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

@@ -356,6 +356,14 @@
               maxlength="100"
               required
             />
+            <label for="guest-companion">С кем ты придешь?</label>
+            <input
+              id="guest-companion"
+              name="companion"
+              type="text"
+              placeholder="Имя и фамилия"
+              maxlength="200"
+            />
             <fieldset>
               <legend>Получится прийти?</legend>
               <div class="attendance-options">
@@ -366,7 +374,21 @@
                     value="yes"
                     required
                     checked
-                  /><span>Да, с удовольствием!</span></label
+                  /><span>Конечно, с утра до вечера с вами!</span></label
+                ><label
+                  ><input
+                    type="radio"
+                    name="attendance"
+                    value="ceremony"
+                  /><span>Приду только на роспись</span></label
+                ><label
+                  ><input type="radio" name="attendance" value="buffet" /><span
+                    >Приду к фуршету</span
+                  ></label
+                ><label
+                  ><input type="radio" name="attendance" value="banquet" /><span
+                    >Приду к началу банкета</span
+                  ></label
                 ><label
                   ><input type="radio" name="attendance" value="no" /><span
                     >Увы, не смогу</span
@@ -375,21 +397,18 @@
               </div>
             </fieldset>
             <label for="guest-drink">Что будешь пить?</label>
-            <select id="guest-drink" name="drink">
-              <option value="">Выбери любимый напиток</option>
-              <option>Вино</option>
-              <option>Игристое</option>
-              <option>Крепкий алкоголь</option>
-              <option>Безалкогольное</option>
-            </select>
-            <label for="guest-note"
-              >Что нам ещё учесть?
-              <span class="optional">необязательно</span></label
-            >
+            <input
+              id="guest-drink"
+              name="drink"
+              type="text"
+              maxlength="300"
+              placeholder="Любимые напитки"
+            />
+            <label for="guest-food">Что будешь или не будешь есть?</label>
             <textarea
-              id="guest-note"
-              name="note"
-              rows="2"
+              id="guest-food"
+              name="food"
+              rows="4"
               maxlength="1000"
               placeholder="Например, аллергии или пожелания по еде"
             ></textarea>
@@ -397,7 +416,7 @@
               Это пример анкеты. Ответы пока не отправляются.
             </p>
             <button class="button button-black" type="submit">
-              Проверить анкету <span aria-hidden="true">↗</span>
+              Отправить ответ <span aria-hidden="true">↗</span>
             </button>
             <p
               class="form-status"
