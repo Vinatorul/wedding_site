@@ -573,7 +573,7 @@ h1 > span:nth-child(3) {
 }
 .timeline li {
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr);
+  grid-template-columns: 120px minmax(0, 1fr);
   align-items: start;
   gap: 25px;
   padding: 0 0 33px;
@@ -592,6 +592,7 @@ h1 > span:nth-child(3) {
   letter-spacing: -0.065em;
   transform: rotate(-6deg);
   padding-top: 6px;
+  white-space: nowrap;
 }
 .timeline h3 {
   font-size: 18px;
@@ -851,8 +852,8 @@ select:disabled {
     padding-right: 10px;
   }
   .timeline li {
-    grid-template-columns: 88px 1fr;
-    gap: 15px;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 20px;
   }
   .invitation {
     --ink: var(--on-accent);
@@ -1012,8 +1013,8 @@ select:disabled {
     margin-top: 39px;
   }
   .timeline li {
-    grid-template-columns: 89px minmax(0, 1fr);
-    gap: 23px;
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 20px;
     padding-bottom: 27px;
   }
   .timeline time {
