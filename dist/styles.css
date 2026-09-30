@@ -573,10 +573,14 @@ h1 > span:nth-child(3) {
 }
 .timeline li {
   display: grid;
-  grid-template-columns: 100px 1fr;
+  grid-template-columns: 100px minmax(0, 1fr);
+  align-items: start;
   gap: 25px;
   padding: 0 0 33px;
   position: relative;
+}
+.timeline li > div {
+  overflow-wrap: anywhere;
 }
 .timeline li + li {
   padding-top: 26px;
@@ -597,6 +601,7 @@ h1 > span:nth-child(3) {
   font-size: 15px;
   line-height: 1.55;
   color: var(--muted);
+  hyphens: auto;
 }
 .schedule-note {
   padding: 22px 0 0 25px;
@@ -1007,7 +1012,7 @@ select:disabled {
     margin-top: 39px;
   }
   .timeline li {
-    grid-template-columns: 89px 1fr;
+    grid-template-columns: 89px minmax(0, 1fr);
     gap: 23px;
     padding-bottom: 27px;
   }
