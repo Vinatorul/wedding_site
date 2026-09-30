@@ -281,7 +281,8 @@ h1 > span:nth-child(3) {
 .hero-art {
   isolation: isolate;
 }
-.places-section {
+.places-section,
+.team-section {
   padding: 0 30px 90px;
 }
 .places-section > h2 {
@@ -293,11 +294,14 @@ h1 > span:nth-child(3) {
   grid-template-columns: 1fr 1fr;
   gap: 66px;
 }
-.venue-card {
+.venue-card,
+.team-card {
   min-width: 0;
   width: calc(100% - 20px);
   max-width: 480px;
   margin: 10px auto 34px;
+}
+.venue-card {
   perspective: 1200px;
 }
 .venue-card-inner {
@@ -671,6 +675,59 @@ h1 > span:nth-child(3) {
 .wishlist-link:focus-visible {
   outline-color: #fff8f3;
 }
+.team-section > h2 {
+  margin-bottom: 24px;
+  text-transform: none;
+}
+.team-intro {
+  max-width: 610px;
+  margin-bottom: 42px;
+}
+.team-card-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 4px 22px;
+}
+.team-contact-copy {
+  min-width: 0;
+}
+.team-contact-copy h3 {
+  color: var(--accent-text);
+  font: 600 20px/1.4 var(--body);
+}
+.team-phone {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.team-socials {
+  display: flex;
+  gap: 8px;
+}
+.team-social-placeholder {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent-text);
+}
+.team-social-placeholder svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .rsvp-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -966,7 +1023,8 @@ input:disabled {
   .invitation-kiss {
     display: none;
   }
-  .places-section {
+  .places-section,
+  .team-section {
     padding: 0 8px 67px;
   }
   .places-section > h2 {
@@ -998,13 +1056,17 @@ input:disabled {
   .day-section h2 {
     margin: 19px 0 38px;
   }
-  .venue-card {
+  .venue-card,
+  .team-card {
     width: calc(100% - 12px);
     max-width: 380px;
     margin-bottom: 32px;
   }
   .polaroid {
     padding: 10px 10px 0;
+  }
+  .team-contact-copy h3 {
+    font-size: 18px;
   }
   .venue-placeholder {
     min-height: 220px;
