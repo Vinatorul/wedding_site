@@ -302,13 +302,13 @@ h1 > span:nth-child(3) {
   gap: 16px;
 }
 .venue-card-heading > span {
-  font-size: 30px;
-  line-height: 1.1;
+  font-size: 18px;
+  line-height: 1.4;
 }
-.venue-card-heading > time {
+.venue-card-heading > h3 {
   color: var(--accent-text);
-  font: 400 40px/1 var(--hand);
-  transform: rotate(-5deg);
+  font: 600 24px/1.4 var(--body);
+  text-align: right;
 }
 .venue-photos {
   position: relative;
@@ -341,15 +341,6 @@ h1 > span:nth-child(3) {
 }
 .wine-photos .venue-photo {
   transform: rotate(5deg);
-}
-.venue-card > h3 {
-  font-size: 23px;
-  margin-top: 22px;
-  margin-bottom: 8px;
-}
-.venue-card .address,
-.venue-card .venue-note {
-  text-align: left;
 }
 .map-frame {
   border: 1px solid var(--field-border);
@@ -953,10 +944,10 @@ select:disabled {
     gap: 61px;
   }
   .venue-card-heading > span {
-    font-size: 28px;
+    font-size: 16px;
   }
-  .venue-card-heading > time {
-    font-size: 39px;
+  .venue-card-heading > h3 {
+    font-size: 18px;
   }
   .venue-photos {
     height: 284px;
@@ -967,16 +958,6 @@ select:disabled {
   }
   .estate-photos .venue-blob {
     inset: 50px 6px;
-  }
-  .venue-card > h3 {
-    font-size: 22px;
-    margin-top: 19px;
-  }
-  .venue-card .address {
-    font-size: 14px;
-  }
-  .venue-card .venue-note {
-    font-size: 14px;
   }
   .map-frame iframe {
     height: 280px;
