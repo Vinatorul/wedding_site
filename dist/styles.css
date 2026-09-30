@@ -669,13 +669,7 @@ h1 > span:nth-child(3) {
   line-height: 1.55;
 }
 .wishlist-link {
-  color: #79283f;
-  background: #fff8f3;
-  padding: 1px 4px;
-  border-radius: 3px;
   font: 400 1.125em / 1 var(--hand);
-  text-decoration: underline;
-  text-underline-offset: 3px;
   white-space: nowrap;
 }
 .wishlist-link:focus-visible {
