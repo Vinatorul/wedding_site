@@ -32,6 +32,7 @@
   --field-border: #aa949c;
   --hand: "CCZoinks", cursive;
   --body: "Manrope", Arial, sans-serif;
+  --section-title-size: 61px;
 }
 * {
   box-sizing: border-box;
@@ -83,7 +84,7 @@ p {
 }
 h2 {
   color: var(--accent-heading);
-  font: 400 clamp(56px, 5.8vw, 82px) / 0.95 var(--hand);
+  font: 400 var(--section-title-size) / 0.95 var(--hand);
   text-transform: uppercase;
   letter-spacing: -0.035em;
 }
@@ -285,6 +286,7 @@ h1 > span:nth-child(3) {
 }
 .places-section > h2 {
   margin: 0 0 52px;
+  text-transform: none;
   transform: rotate(-3deg);
 }
 .venues-grid {
@@ -388,7 +390,6 @@ h1 > span:nth-child(3) {
 .invitation h2 {
   color: white;
   text-transform: none;
-  font-size: 61px;
   margin-bottom: 18px;
 }
 .invitation p {
@@ -601,7 +602,6 @@ h1 > span:nth-child(3) {
 }
 .details-heading h2 {
   color: white;
-  font-size: 77px;
   transform: rotate(-5deg);
   margin-top: 27px;
 }
@@ -645,7 +645,6 @@ h1 > span:nth-child(3) {
   padding: 0 44px 100px;
 }
 .rsvp-copy h2 {
-  font-size: 88px;
   transform: rotate(-5deg);
   margin: 0 0 36px;
 }
@@ -760,7 +759,7 @@ select:disabled {
 }
 .footer > p {
   color: var(--accent-heading);
-  font: 400 clamp(90px, 11vw, 156px) / 1.1 var(--hand);
+  font: 400 var(--section-title-size) / 1.1 var(--hand);
   text-transform: uppercase;
   letter-spacing: -0.04em;
   transform: rotate(-3deg);
@@ -833,6 +832,9 @@ select:disabled {
   }
 }
 @media (max-width: 760px) {
+  :root {
+    --section-title-size: 46px;
+  }
   .page-shell {
     width: calc(100% - 40px);
     max-width: 510px;
@@ -919,7 +921,6 @@ select:disabled {
     gap: 0;
   }
   .invitation h2 {
-    font-size: 46px;
     line-height: 1;
     margin-bottom: 17px;
   }
@@ -936,7 +937,6 @@ select:disabled {
     padding: 0 8px 67px;
   }
   .places-section > h2 {
-    font-size: clamp(36px, 12vw, 52px);
     margin: 0 0 42px;
   }
   .venues-grid {
@@ -967,16 +967,12 @@ select:disabled {
     gap: 39px;
     padding: 45px 8px 58px;
   }
-  .schedule-section h2 {
-    font-size: 64px;
-  }
   .day-section {
     grid-template-columns: 1fr;
     gap: 70px;
     padding: 0 8px 78px;
   }
   .day-section h2 {
-    font-size: 64px;
     margin: 19px 0 38px;
   }
   .polaroid {
@@ -1022,7 +1018,6 @@ select:disabled {
     position: relative;
   }
   .details-heading h2 {
-    font-size: 61px;
     margin-top: 22px;
   }
   .details-heart {
@@ -1052,7 +1047,6 @@ select:disabled {
     position: relative;
   }
   .rsvp-copy h2 {
-    font-size: 75px;
     margin: 0 0 29px;
   }
   .rsvp-copy > p:last-of-type {
@@ -1075,7 +1069,6 @@ select:disabled {
     font-size: 27px;
   }
   .footer > p {
-    font-size: clamp(43px, 12vw, 70px);
     margin-bottom: 28px;
   }
   .footer > div {
@@ -1173,11 +1166,8 @@ select:disabled {
   .details {
     grid-template-columns: minmax(0, 1fr);
   }
-  .details-heading h2 {
-    font-size: clamp(48px, 15.5vw, 61px);
-  }
   .details-heart {
-    top: 95px;
+    top: 50px;
     font-size: clamp(68px, 21vw, 82px);
     right: 0;
   }
