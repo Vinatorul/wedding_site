@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#e2d9d6" />
+    <meta name="description" content="Саша и Соня. 16 октября 2026 года." />
+    <title>Саша + Соня — 16 октября 2026</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20570%22%3E%3Crect%20width%3D%22600%22%20height%3D%22570%22%20rx%3D%22110%22%20fill%3D%22%2379283f%22%2F%3E%3Cpath%20transform%3D%22translate%2860%2057%29%20scale%28.8%29%22%20d%3D%22M320%20256C308%20214%20243%20111%20182%2059C153%2034%20126%2024%20103%2031C38%2047%2010%20106%2018%20178C23%20282%2079%20400%20158%20475C216%20530%20283%20550%20346%20536C445%20519%20517%20434%20554%20330C587%20239%20592%20145%20562%2084C540%2037%20509%2017%20459%2019C395%2017%20374%2052%20355%20109C342%20147%20330%20205%20320%20256Z%22%20fill%3D%22white%22%2F%3E%3C%2Fsvg%3E"
+    />
+    <link
+      rel="preload"
+      href="assets/CCZoinks-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="content.js?v=20260930-invitation" defer></script>
+    <script src="main.js" defer></script>
+  </head>
+  <body>
+    <div class="preview-toolbar">
+      <div class="palette-options" role="group" aria-label="Цвет приглашения">
+        <button type="button" data-theme-choice="burgundy" aria-pressed="true">
+          <span class="swatch swatch-burgundy" aria-hidden="true"></span
+          >Бургунди
+        </button>
+        <button type="button" data-theme-choice="autumn" aria-pressed="false">
+          <span class="swatch swatch-autumn" aria-hidden="true"></span>Осенний
+        </button>
+      </div>
+    </div>
+    <div class="page-shell">
+      <main>
+        <section class="hero" id="home" aria-labelledby="hero-title">
+          <div class="hero-copy">
+            <h1 id="hero-title">
+              <span data-content="firstName">Саша</span
+              ><span class="name-plus">+</span
+              ><span data-content="secondName">Соня</span
+              ><span class="name-equals" aria-hidden="true"
+                >= <span class="heart-icon"></span
+              ></span>
+            </h1>
+            <div class="hero-date">
+              <span data-content="date">16.10.2026</span>
+            </div>
+          </div>
+          <div class="hero-art">
+            <div class="accent-blob" aria-hidden="true"></div>
+            <span class="hero-spark" aria-hidden="true">✳</span>
+            <img
+              class="couple-photo"
+              src="assets/couple.png"
+              width="2752"
+              height="2064"
+              alt="Саша и Соня обнимаются и улыбаются"
+              fetchpriority="high"
+            />
+          </div>
+        </section>
+
+        <section
+          class="invitation"
+          id="invitation"
+          aria-labelledby="invitation-title"
+        >
+          <span class="invitation-star" aria-hidden="true">✳</span>
+          <div>
+            <h2 id="invitation-title">Друзья и родные!</h2>
+            <p data-content="invitation">
+              Совсем скоро мы станем теплой ламповой семьей – и мы приглашаем
+              вас разделить этот день вместе с нами. Где? Когда? Все вопросы в
+              ваших мыслях – ответы на них смотрите ниже!
+            </p>
+          </div>
+          <span class="invitation-kiss handwritten" aria-hidden="true"
+            >love<br />you!</span
+          >
+        </section>
+
+        <section
+          class="places-section"
+          id="place"
+          aria-labelledby="place-title"
+        >
+          <h2 id="place-title">Где встречаемся?</h2>
+          <div class="venues-grid">
+            <article class="venue-card">
+              <div class="venue-card-heading">
+                <span class="handwritten">Скажем «да»</span
+                ><time datetime="2026-10-16T11:40:00+03:00">11:40</time>
+              </div>
+              <div class="venue-photos estate-photos">
+                <div class="accent-blob venue-blob" aria-hidden="true"></div>
+                <img
+                  class="venue-photo"
+                  src="assets/vorontsovo-palace.png"
+                  alt="Дворец в Усадьбе Воронцово"
+                  width="2202"
+                  height="1318"
+                  loading="lazy"
+                />
+              </div>
+              <h3>Усадьба Воронцово</h3>
+              <p class="address">Москва, Воронцовский парк, 3</p>
+              <p class="venue-note">Здесь мы станем семьёй.</p>
+              <div class="map-frame">
+                <iframe
+                  title="Яндекс Карта: Усадьба Воронцово"
+                  src="https://yandex.ru/map-widget/v1/?mode=search&amp;oid=1768358696&amp;ol=biz&amp;z=16"
+                  width="560"
+                  height="300"
+                  loading="lazy"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <a
+                class="button button-accent"
+                href="https://yandex.ru/maps/-/CXUmzK4f"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Открыть в Яндекс Картах <span aria-hidden="true">↗</span></a
+              >
+            </article>
+            <article class="venue-card">
+              <div class="venue-card-heading">
+                <span class="handwritten">А потом — праздновать!</span
+                ><time datetime="2026-10-16T13:00:00+03:00">13:00</time>
+              </div>
+              <div class="venue-photos wine-photos">
+                <div class="accent-blob venue-blob" aria-hidden="true"></div>
+                <img
+                  class="venue-photo"
+                  src="assets/vinyl-wine-terrace.png"
+                  alt="Вход и терраса ресторана «Винил и Вино»"
+                  width="1350"
+                  height="1417"
+                  loading="lazy"
+                />
+              </div>
+              <h3>Винил и Вино</h3>
+              <p class="address">Москва, ул. Каретный Ряд, 8</p>
+              <p class="venue-note">Поднимем бокалы в любимой компании.</p>
+              <div class="map-frame">
+                <iframe
+                  title="Яндекс Карта: Винил и Вино"
+                  src="https://yandex.ru/map-widget/v1/?mode=search&amp;oid=25582945613&amp;ol=biz&amp;z=16"
+                  width="560"
+                  height="300"
+                  loading="lazy"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <a
+                class="button button-accent"
+                href="https://yandex.ru/maps/-/CXAs6-OD"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Открыть в Яндекс Картах <span aria-hidden="true">↗</span></a
+              >
+            </article>
+          </div>
+        </section>
+
+        <section
+          class="schedule-section"
+          id="schedule"
+          aria-labelledby="schedule-title"
+        >
+          <div>
+            <h2 id="schedule-title">Во сколько?</h2>
+          </div>
+          <ol class="timeline">
+            <li>
+              <time datetime="2026-10-16T11:40:00+03:00">11:40</time>
+              <div>
+                <h3>Говорим «да»</h3>
+                <p>
+                  Встречаемся в Усадьбе Воронцово на самый важный момент этого
+                  дня.
+                </p>
+              </div>
+            </li>
+            <li>
+              <time datetime="2026-10-16T13:00:00+03:00">13:00</time>
+              <div>
+                <h3>Сбор гостей и фуршет</h3>
+                <p>Обнимаемся, знакомимся и поднимаем первые бокалы.</p>
+              </div>
+            </li>
+            <li>
+              <time datetime="2026-10-16T15:00:00+03:00">15:00</time>
+              <div>
+                <h3>Обед</h3>
+                <p>
+                  Собираемся за столом — с хорошей едой и тостами за любовь.
+                </p>
+              </div>
+            </li>
+            <li>
+              <time datetime="2026-10-16T18:00:00+03:00">18:00</time>
+              <div>
+                <h3>Вечерняя программа</h3>
+                <p>Продолжаем праздновать вместе!</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="details" id="details" aria-labelledby="details-title">
+          <div class="details-heading">
+            <h2 id="details-title">Маленькие<br />детали</h2>
+            <span class="details-heart heart-icon" aria-hidden="true"></span>
+          </div>
+          <div class="details-copy">
+            <article>
+              <div>
+                <h3>Вместо цветов</h3>
+                <p data-content="flowers">
+                  Самый главный подарок — провести этот день вместе. А вместо
+                  букета можно принести бутылочку любимого напитка: откроем её
+                  на одну из наших годовщин.
+                </p>
+              </div>
+            </article>
+            <article>
+              <div>
+                <h3>Про подарки</h3>
+                <p data-content="gifts">
+                  Если хочется нас порадовать, будем благодарны за вклад в наше
+                  свадебное путешествие. Но главное — ваши объятия.
+                </p>
+              </div>
+            </article>
+            <article>
+              <div>
+                <h3>Что надеть?</h3>
+                <p data-content="dresscode">
+                  Приходите красивыми и счастливыми. Выбирайте то, в чём вам
+                  будет удобно обниматься и танцевать.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="rsvp-section" id="rsvp" aria-labelledby="rsvp-title">
+          <div class="rsvp-copy">
+            <h2 id="rsvp-title">Ну что,<br />ты с нами?</h2>
+            <p data-content="rsvpIntro">
+              Дай знать, получится ли быть с нами в этот день. Это поможет нам
+              всё спланировать.
+            </p>
+            <span class="rsvp-arrow handwritten" aria-hidden="true"
+              >вот тут ↗</span
+            >
+          </div>
+          <form id="rsvp-form">
+            <label for="guest-name">Как тебя зовут?</label>
+            <input
+              id="guest-name"
+              name="name"
+              autocomplete="name"
+              placeholder="Имя и фамилия"
+              maxlength="100"
+              required
+            />
+            <fieldset>
+              <legend>Получится прийти?</legend>
+              <div class="attendance-options">
+                <label
+                  ><input
+                    type="radio"
+                    name="attendance"
+                    value="yes"
+                    required
+                    checked
+                  /><span>Да, с удовольствием!</span></label
+                ><label
+                  ><input type="radio" name="attendance" value="no" /><span
+                    >Увы, не смогу</span
+                  ></label
+                >
+              </div>
+            </fieldset>
+            <label for="guest-drink">Что будешь пить?</label>
+            <select id="guest-drink" name="drink">
+              <option value="">Выбери любимый напиток</option>
+              <option>Вино</option>
+              <option>Игристое</option>
+              <option>Крепкий алкоголь</option>
+              <option>Безалкогольное</option>
+            </select>
+            <label for="guest-note"
+              >Что нам ещё учесть?
+              <span class="optional">необязательно</span></label
+            >
+            <textarea
+              id="guest-note"
+              name="note"
+              rows="2"
+              maxlength="1000"
+              placeholder="Например, аллергии или пожелания по еде"
+            ></textarea>
+            <p class="form-demo-note">
+              Это пример анкеты. Ответы пока не отправляются.
+            </p>
+            <button class="button button-black" type="submit">
+              Проверить анкету <span aria-hidden="true">↗</span>
+            </button>
+            <p
+              class="form-status"
+              id="form-status"
+              role="status"
+              aria-live="polite"
+            ></p>
+          </form>
+        </section>
+
+        <footer class="footer">
+          <span class="handwritten footer-prelude">всё начинается с любви</span>
+          <p>До встречи<span aria-hidden="true">!</span></p>
+          <div>
+            <span data-content="footerNames">Саша + Соня</span
+            ><span class="footer-heart heart-icon" aria-hidden="true"></span
+            ><span data-content="date">16.10.2026</span>
+          </div>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
