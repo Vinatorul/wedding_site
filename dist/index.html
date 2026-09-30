@@ -21,7 +21,7 @@
     <script src="theme.js"></script>
     <link rel="stylesheet" href="styles.css" />
     <script src="content.js?v=20260930-invitation" defer></script>
-    <script src="main.js" defer></script>
+    <script src="main.js?v=20260930-venue-flip-2" defer></script>
   </head>
   <body>
     <div class="preview-toolbar">
@@ -91,71 +91,125 @@
         >
           <h2 id="place-title">Где встречаемся?</h2>
           <div class="venues-grid">
-            <article class="venue-card">
-              <figure class="polaroid estate-photos">
-                <img
-                  class="venue-photo"
-                  src="assets/vorontsovo-photo.png"
-                  alt="Дворец в Усадьбе Воронцово"
-                  width="1682"
-                  height="1115"
-                  loading="lazy"
-                />
-                <figcaption class="venue-card-heading">
-                  <span>Загс</span>
-                  <h3>Усадьба Воронцово</h3>
-                </figcaption>
-              </figure>
-              <div class="map-frame">
-                <iframe
-                  title="Яндекс Карта: Усадьба Воронцово"
-                  src="https://yandex.ru/map-widget/v1/?mode=search&amp;oid=1768358696&amp;ol=biz&amp;z=16"
-                  width="560"
-                  height="300"
-                  loading="lazy"
-                  allowfullscreen
-                ></iframe>
+            <article class="venue-card" aria-labelledby="estate-name">
+              <div class="venue-card-inner">
+                <figure
+                  class="polaroid venue-face venue-front"
+                  aria-hidden="false"
+                >
+                  <img
+                    class="venue-photo"
+                    src="assets/vorontsovo-photo.png"
+                    alt="Дворец в Усадьбе Воронцово"
+                    width="1682"
+                    height="1115"
+                    loading="lazy"
+                  />
+                  <figcaption class="venue-card-footer">
+                    <div class="venue-card-heading">
+                      <span>Загс</span>
+                      <h3 id="estate-name">Усадьба Воронцово</h3>
+                    </div>
+                    <button
+                      type="button"
+                      class="venue-flip"
+                      data-venue-flip="map"
+                      aria-controls="estate-map"
+                      aria-expanded="false"
+                      aria-label="Где это? Усадьба Воронцово"
+                    >
+                      Где<br />это?
+                    </button>
+                  </figcaption>
+                </figure>
+                <div
+                  class="polaroid venue-face venue-back"
+                  id="estate-map"
+                  aria-hidden="true"
+                  inert
+                >
+                  <div class="map-frame">
+                    <iframe
+                      title="Яндекс Карта: Усадьба Воронцово"
+                      src="https://yandex.ru/map-widget/v1/?mode=search&amp;oid=1768358696&amp;ol=biz&amp;z=16"
+                      width="560"
+                      height="300"
+                      loading="lazy"
+                      allowfullscreen
+                    ></iframe>
+                  </div>
+                  <div class="venue-back-footer">
+                    <button
+                      type="button"
+                      class="venue-flip"
+                      data-venue-flip="photo"
+                      aria-label="Обратно к фото усадьбы Воронцово"
+                    >
+                      Обратно
+                    </button>
+                  </div>
+                </div>
               </div>
-              <a
-                class="button button-accent"
-                href="https://yandex.ru/maps/-/CXUmzK4f"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Открыть в Яндекс Картах <span aria-hidden="true">↗</span></a
-              >
             </article>
-            <article class="venue-card">
-              <figure class="polaroid wine-photos">
-                <img
-                  class="venue-photo"
-                  src="assets/vinyl-wine-photo.png"
-                  alt="Вход в ресторан «Винил и вино»"
-                  width="828"
-                  height="552"
-                  loading="lazy"
-                />
-                <figcaption class="venue-card-heading">
-                  <span>Ресторан</span>
-                  <h3>Винил и вино</h3>
-                </figcaption>
-              </figure>
-              <div class="map-frame">
-                <iframe
-                  title="Яндекс Карта: Винил и Вино"
-                  src="https://yandex.ru/map-widget/v1/?mode=search&amp;oid=25582945613&amp;ol=biz&amp;z=16"
-                  width="560"
-                  height="300"
-                  loading="lazy"
-                  allowfullscreen
-                ></iframe>
+            <article class="venue-card" aria-labelledby="restaurant-name">
+              <div class="venue-card-inner">
+                <figure
+                  class="polaroid venue-face venue-front"
+                  aria-hidden="false"
+                >
+                  <img
+                    class="venue-photo"
+                    src="assets/vinyl-wine-photo.png"
+                    alt="Вход в ресторан «Винил и вино»"
+                    width="828"
+                    height="552"
+                    loading="lazy"
+                  />
+                  <figcaption class="venue-card-footer">
+                    <div class="venue-card-heading">
+                      <span>Ресторан</span>
+                      <h3 id="restaurant-name">Винил и вино</h3>
+                    </div>
+                    <button
+                      type="button"
+                      class="venue-flip"
+                      data-venue-flip="map"
+                      aria-controls="restaurant-map"
+                      aria-expanded="false"
+                      aria-label="Где это? Винил и вино"
+                    >
+                      Где<br />это?
+                    </button>
+                  </figcaption>
+                </figure>
+                <div
+                  class="polaroid venue-face venue-back"
+                  id="restaurant-map"
+                  aria-hidden="true"
+                  inert
+                >
+                  <div class="map-frame">
+                    <iframe
+                      title="Яндекс Карта: Винил и Вино"
+                      src="https://yandex.ru/map-widget/v1/?mode=search&amp;oid=25582945613&amp;ol=biz&amp;z=16"
+                      width="560"
+                      height="300"
+                      loading="lazy"
+                      allowfullscreen
+                    ></iframe>
+                  </div>
+                  <div class="venue-back-footer">
+                    <button
+                      type="button"
+                      class="venue-flip"
+                      data-venue-flip="photo"
+                      aria-label="Обратно к фото ресторана Винил и вино"
+                    >
+                      Обратно
+                    </button>
+                  </div>
+                </div>
               </div>
-              <a
-                class="button button-accent"
-                href="https://yandex.ru/maps/-/CXAs6-OD"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Открыть в Яндекс Картах <span aria-hidden="true">↗</span></a
-              >
             </article>
           </div>
         </section>
