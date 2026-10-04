@@ -59,17 +59,47 @@ function updateAttendance() {
   document.getElementById("form-status").textContent = "";
 }
 
-document.getElementById("rsvp-form").addEventListener("submit", (event) => {
+async function sendRsvp(form) {
+  const answers = Object.fromEntries(new FormData(form));
+  answers.drink ??= "";
+  const response = await fetch("/api/rsvp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(answers),
+  });
+  const result = await response.json();
+  if (response.ok && result.ok === true) return "Спасибо! Ответ отправлен.";
+  return typeof result.error === "string"
+    ? result.error
+    : "Не получилось отправить ответ. Попробуй ещё раз.";
+}
+
+async function submitRsvp(event) {
   event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('[type="submit"]');
+  if (button.disabled) return;
   const name = document.getElementById("guest-name");
   if (!name.value.trim()) {
     name.setCustomValidity("Напиши своё имя.");
     name.reportValidity();
     return;
   }
-  document.getElementById("form-status").textContent =
-    "Всё заполнено! Это макет: ответ никуда не отправлен.";
-});
+  const status = document.getElementById("form-status");
+  button.disabled = true;
+  form.setAttribute("aria-busy", "true");
+  status.textContent = "Отправляем ответ…";
+  try {
+    status.textContent = await sendRsvp(form);
+  } catch {
+    status.textContent = "Не получилось отправить ответ. Попробуй ещё раз.";
+  } finally {
+    button.disabled = false;
+    form.removeAttribute("aria-busy");
+  }
+}
+
+document.getElementById("rsvp-form").addEventListener("submit", submitRsvp);
 
 document.getElementById("guest-name").addEventListener("input", (event) => {
   event.target.setCustomValidity("");

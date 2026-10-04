@@ -562,6 +562,11 @@ h1 > span:nth-child(3) {
 .button[aria-disabled="true"]:hover {
   transform: none;
 }
+#rsvp-form .button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+}
 .button span {
   font-size: 22px;
   line-height: 1;
@@ -741,14 +746,6 @@ h1 > span:nth-child(3) {
 .rsvp-copy > p:last-of-type {
   max-width: 290px;
 }
-.rsvp-arrow {
-  display: block;
-  text-align: right;
-  padding-right: 40px;
-  margin-top: 30px;
-  font-size: 46px;
-  transform: rotate(-5deg);
-}
 form {
   padding-top: 2px;
 }
@@ -826,11 +823,6 @@ input:disabled {
   font-size: 12px;
   font-weight: 400;
   float: right;
-}
-.form-demo-note {
-  font-size: 12px;
-  margin-bottom: 12px;
-  color: var(--muted);
 }
 .form-status {
   margin-top: 15px;
@@ -1140,9 +1132,6 @@ input:disabled {
   }
   .rsvp-copy > p:last-of-type {
     max-width: 100%;
-  }
-  .rsvp-arrow {
-    display: none;
   }
   .attendance-options {
     flex-direction: column;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish the static site behind an existing Docker-based Caddy proxy."""
+"""Publish the invitation and SQLite RSVP behind an existing Caddy proxy."""
 
 import argparse
 import json
@@ -12,7 +12,9 @@ import tempfile
 import time
 from pathlib import Path, PurePosixPath
 
-IMAGE = "docker.io/library/caddy:2-alpine"
+IMAGE = "wedding-site-app"
+APP_PORT = 8000
+DATA_UID = 10001
 MOUNT_ROOT = "/srv/wedding-site"
 OWNER_LABEL = "me.wedding-site.managed"
 
@@ -103,7 +105,7 @@ def rover_settings(args, managed):
 
 def site_routes(args):
     if args.rover_upstream is None:
-        return f"    reverse_proxy {args.container}:80\n"
+        return f"    reverse_proxy {args.container}:{APP_PORT}\n"
     return (
         f"    # rover-network: {args.rover_network}\n"
         "    redir /rover /rover/?{query} 308\n"
@@ -111,7 +113,7 @@ def site_routes(args):
         f"        reverse_proxy {args.rover_upstream}\n"
         "    }\n"
         "    handle {\n"
-        f"        reverse_proxy {args.container}:80\n"
+        f"        reverse_proxy {args.container}:{APP_PORT}\n"
         "    }\n"
     )
 
@@ -177,6 +179,21 @@ def check_site_container(args, container):
         )
     if container["HostConfig"].get("PortBindings"):
         raise ValueError("У контейнера сайта обнаружены опубликованные порты.")
+    check_data_mount(args, mounts)
+
+
+def check_data_mount(args, mounts):
+    for mount in mounts:
+        if mount["Destination"] != "/data":
+            continue
+        if (
+            mount["Type"] != "bind"
+            or mount["Source"] != str(args.deploy_root / "data")
+            or not mount["RW"]
+        ):
+            raise ValueError(
+                "Каталог базы существующего контейнера отличается. Используй прежние параметры."
+            )
 
 
 def new_proxy_config(args, original):
@@ -228,11 +245,20 @@ def switch_release(root, target):
         temporary.unlink(missing_ok=True)
 
 
-def ensure_site_container(args, existing):
-    if existing:
-        if not existing["State"]["Running"]:
-            docker("start", args.container)
-        return
+def build_application(repo, release):
+    image = f"{IMAGE}:{release.name}"
+    docker("build", "--tag", image, str(repo / "backend"))
+    return image
+
+
+def prepare_data(root):
+    data = root / "data"
+    data.mkdir(mode=0o700, exist_ok=True)
+    data.chmod(0o700)
+    os.chown(data, DATA_UID, DATA_UID)
+
+
+def run_application(args, image):
     docker(
         "run",
         "-d",
@@ -246,14 +272,56 @@ def ensure_site_container(args, existing):
         f"{OWNER_LABEL}=true",
         "--mount",
         f"type=bind,src={args.deploy_root},dst={MOUNT_ROOT},readonly",
-        IMAGE,
-        "caddy",
-        "file-server",
-        "--root",
-        f"{MOUNT_ROOT}/current",
-        "--listen",
-        ":80",
+        "--mount",
+        f"type=bind,src={args.deploy_root / 'data'},dst=/data",
+        image,
     )
+
+
+def replace_application(args, existing, image, backup):
+    if existing:
+        if existing["State"]["Running"]:
+            docker("stop", args.container)
+        docker("rename", args.container, backup)
+    run_application(args, image)
+
+
+def restore_saved_container(args, existing, backup):
+    saved = inspect_container(backup)
+    if saved is not None:
+        check_site_container(args, saved)
+        docker("rename", backup, args.container)
+    if existing and existing["State"]["Running"]:
+        current = inspect_container(args.container)
+        check_site_container(args, current)
+        if current and not current["State"]["Running"]:
+            docker("start", args.container)
+
+
+def restore_application(args, existing, image, backup):
+    try:
+        current = inspect_container(args.container)
+        if current and current["Config"].get("Image") == image:
+            check_site_container(args, current)
+            docker("rm", "--force", args.container)
+        if existing:
+            restore_saved_container(args, existing, backup)
+    except (ValueError, OSError, subprocess.SubprocessError) as error:
+        print(
+            f"Не удалось восстановить контейнер приглашения: {error}", file=sys.stderr
+        )
+
+
+def remove_previous_container(args, backup):
+    try:
+        previous = inspect_container(backup)
+        if previous is not None:
+            check_site_container(args, previous)
+            docker("rm", backup)
+    except (ValueError, OSError, subprocess.SubprocessError) as error:
+        print(
+            f"Прежний контейнер остался для ручной проверки: {error}", file=sys.stderr
+        )
 
 
 def check_http(args):
@@ -263,13 +331,10 @@ def check_http(args):
                 "docker",
                 "exec",
                 args.container,
-                "wget",
-                "-q",
-                "-T",
-                "3",
-                "-O",
-                "/dev/null",
-                "http://127.0.0.1/",
+                "python",
+                "-c",
+                "import urllib.request; "
+                f"urllib.request.urlopen('http://127.0.0.1:{APP_PORT}/api/health', timeout=3)",
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -340,22 +405,38 @@ def deploy(args, repo):
     original = args.caddyfile.read_text(encoding="utf-8")
     updated = new_proxy_config(args, original)
     check_rover_network(args, proxy)
+    release = create_release(repo, args.deploy_root)
+    image = build_application(repo, release)
+    prepare_data(args.deploy_root)
+    deploy_release(args, existing, inside_path, original, updated, release, image)
+    print(f"Файлы сайта и настройка Caddy обновлены: https://{args.domain}")
+    print(f"Релиз: {release}; контейнер: {args.container}")
+
+
+def restore_release(root, previous):
+    if previous is None:
+        (root / "current").unlink(missing_ok=True)
+    else:
+        switch_release(root, previous)
+
+
+def deploy_release(args, existing, inside_path, original, updated, release, image):
     current = args.deploy_root / "current"
     previous = os.readlink(current) if current.is_symlink() else None
-    release = create_release(repo, args.deploy_root)
+    backup = f"{args.container}-previous-{release.name}"
+    if inspect_container(backup) is not None:
+        raise ValueError("Имя резервного контейнера уже занято; запусти деплой снова.")
     switch_release(args.deploy_root, f"releases/{release.name}")
     try:
-        ensure_site_container(args, existing)
+        replace_application(args, existing, image, backup)
         check_http(args)
         apply_proxy_config(args, inside_path, original, updated, release)
     except (ValueError, OSError, subprocess.SubprocessError):
-        if previous is None:
-            current.unlink(missing_ok=True)
-        else:
-            switch_release(args.deploy_root, previous)
+        restore_release(args.deploy_root, previous)
+        restore_application(args, existing, image, backup)
         raise
-    print(f"Файлы сайта и настройка Caddy обновлены: https://{args.domain}")
-    print(f"Релиз: {release}; контейнер: {args.container}")
+    if existing:
+        remove_previous_container(args, backup)
 
 
 if __name__ == "__main__":

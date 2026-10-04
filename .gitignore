@@ -2,3 +2,9 @@
 /previews/http-server.log
 *.local.env
 __pycache__/
+.venv/
+/backend/data/
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*

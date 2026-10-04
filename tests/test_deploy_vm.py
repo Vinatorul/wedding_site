@@ -1,13 +1,15 @@
 import argparse
+import copy
 import importlib.util
 import io
 import json
 import os
+import sqlite3
 import stat
 import subprocess
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import closing, redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,7 +22,10 @@ OTHER_SITE = 'other.example.com {\n    respond "another site"\n}\n'
 
 def site_container(args):
     return {
-        "Config": {"Labels": {deploy_vm.OWNER_LABEL: "true"}},
+        "Config": {
+            "Labels": {deploy_vm.OWNER_LABEL: "true"},
+            "Image": "docker.io/library/caddy:2-alpine",
+        },
         "State": {"Running": True},
         "NetworkSettings": {"Networks": {args.network: {}}},
         "HostConfig": {"PortBindings": {}},
@@ -33,6 +38,20 @@ def site_container(args):
             }
         ],
     }
+
+
+def bind_mount(value):
+    parts = dict(part.split("=", 1) for part in value.split(",") if "=" in part)
+    return {
+        "Type": parts["type"],
+        "Source": parts["src"],
+        "Destination": parts["dst"],
+        "RW": "readonly" not in value.split(","),
+    }
+
+
+def option_values(command, flag):
+    return [value for index, value in enumerate(command) if command[index - 1] == flag]
 
 
 class DockerStub:
@@ -63,12 +82,53 @@ class DockerStub:
         if command[1:3] == ["container", "inspect"]:
             return self.inspect(command)
         if command[1] == "run":
-            self.containers[self.args.container] = site_container(self.args)
-        if command[1] == "start":
-            self.containers[command[2]]["State"]["Running"] = True
+            self.run_container(command)
+        if command[1] in ("start", "stop"):
+            self.containers[command[2]]["State"]["Running"] = command[1] == "start"
+        if command[1] == "rename":
+            self.containers[command[3]] = self.containers.pop(command[2])
+        if command[1] == "rm":
+            self.containers.pop(command[-1])
         if command[1] == "exec" and command[3] == "caddy":
             return self.caddy(command)
+        if command[1] == "exec":
+            return self.health(command)
+        if self.failures.get(command[1], 0):
+            self.failures[command[1]] -= 1
+            raise subprocess.CalledProcessError(1, command, stderr="Docker failure")
         return subprocess.CompletedProcess(command, 0, stdout="ok", stderr="")
+
+    def run_container(self, command):
+        name = option_values(command, "--name")[0]
+        if name in self.containers:
+            raise AssertionError(f"Container already exists: {name}")
+        labels = dict(
+            value.split("=", 1) for value in option_values(command, "--label")
+        )
+        self.containers[name] = {
+            "Config": {
+                "Labels": labels,
+                "Image": command[-1],
+                "Env": option_values(command, "--env") + option_values(command, "-e"),
+            },
+            "State": {"Running": True},
+            "NetworkSettings": {
+                "Networks": {option_values(command, "--network")[0]: {}}
+            },
+            "HostConfig": {"PortBindings": {}},
+            "Mounts": [
+                bind_mount(value) for value in option_values(command, "--mount")
+            ],
+        }
+
+    def health(self, command):
+        failure = self.failures.get("health", 0)
+        if failure:
+            self.failures["health"] -= 1
+        healthy = self.containers[command[2]]["State"]["Running"] and not failure
+        return subprocess.CompletedProcess(
+            command, int(not healthy), stdout="", stderr=""
+        )
 
     def inspect(self, command):
         container = self.containers.get(command[-1])
@@ -100,10 +160,7 @@ class DeployTests(unittest.TestCase):
         self.base = Path(self.temporary.name).resolve()
         self.repo = self.base / "repo"
         self.dist = self.repo / "dist"
-        self.dist.mkdir(parents=True)
-        (self.dist / "index.html").write_text("first site", encoding="utf-8")
-        (self.dist / "assets").mkdir()
-        (self.dist / "assets/photo.txt").write_text("photo", encoding="utf-8")
+        self.create_repository()
         caddyfile = self.base / "Caddyfile"
         caddyfile.write_text(OTHER_SITE, encoding="utf-8")
         self.args = argparse.Namespace(
@@ -117,9 +174,30 @@ class DeployTests(unittest.TestCase):
             rover_network=None,
         )
         self.docker = DockerStub(self.args)
-        self.mock_run = patch.object(deploy_vm.subprocess, "run", self.docker)
-        self.mock_run.start()
-        self.addCleanup(self.mock_run.stop)
+        self.patch_runtime()
+
+    def patch_runtime(self):
+        for target, attribute, replacement in (
+            (deploy_vm.subprocess, "run", self.docker),
+            (deploy_vm.time, "sleep", lambda seconds: None),
+        ):
+            runtime_patch = patch.object(target, attribute, replacement)
+            runtime_patch.start()
+            self.addCleanup(runtime_patch.stop)
+        owner_patch = patch.object(deploy_vm.os, "chown")
+        self.chown = owner_patch.start()
+        self.addCleanup(owner_patch.stop)
+
+    def create_repository(self):
+        self.dist.mkdir(parents=True)
+        (self.dist / "index.html").write_text("first site", encoding="utf-8")
+        (self.dist / "assets").mkdir()
+        (self.dist / "assets/photo.txt").write_text("photo", encoding="utf-8")
+        backend = self.repo / "backend"
+        backend.mkdir()
+        (backend / "Dockerfile").write_text("FROM python:3.13-slim\n")
+        (backend / "app.py").write_text("# app\n")
+        (backend / "requirements.txt").write_text("gunicorn\n")
 
     def run_deploy(self):
         with redirect_stdout(io.StringIO()):
@@ -132,6 +210,21 @@ class DeployTests(unittest.TestCase):
         (self.args.deploy_root / "current").symlink_to("releases/previous")
         self.docker.containers[self.args.container] = site_container(self.args)
         return "releases/previous"
+
+    def seed_database(self):
+        data = self.args.deploy_root / "data"
+        data.mkdir(mode=0o700, parents=True)
+        database = data / "rsvp.sqlite3"
+        with closing(sqlite3.connect(database)) as connection:
+            connection.execute("CREATE TABLE responses (name TEXT)")
+            connection.execute("INSERT INTO responses VALUES (?)", ("Соня",))
+            connection.commit()
+        database.chmod(0o600)
+        return database
+
+    def database_snapshot(self, database):
+        metadata = database.stat()
+        return database.read_bytes(), metadata.st_ino, stat.S_IMODE(metadata.st_mode)
 
     def filesystem_snapshot(self):
         snapshot = {}
@@ -162,14 +255,14 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(self.args.caddyfile.stat().st_ino, inode)
         config = self.args.caddyfile.read_text()
         self.assertTrue(config.startswith(OTHER_SITE))
-        self.assertIn("reverse_proxy wedding-site-web:80", config)
+        self.assertIn("reverse_proxy wedding-site-web:8000", config)
         self.assertEqual(config.count("# BEGIN wedding-site-web"), 1)
         backups = list((self.args.deploy_root / "config-backups").glob("*.caddy"))
         self.assertEqual(len(backups), 1)
         self.assertEqual(backups[0].read_text(), OTHER_SITE)
         self.assertEqual(stat.S_IMODE(backups[0].stat().st_mode), 0o600)
 
-    def test_repeat_deploy_keeps_previous_release_and_reuses_container(self):
+    def test_repeat_deploy_keeps_previous_release_and_replaces_container(self):
         self.run_deploy()
         current = self.args.deploy_root / "current"
         first_target = os.readlink(current)
@@ -189,37 +282,77 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(self.args.caddyfile.read_text(), first_config)
         self.assertEqual(self.args.caddyfile.stat().st_ino, inode)
         runs = sum(command[1] == "run" for command in self.docker.commands)
-        self.assertEqual(runs, 1)
+        self.assertEqual(runs, 2)
+        self.assertEqual(
+            set(self.docker.containers),
+            {self.args.proxy_container, self.args.container},
+        )
         operations = [call[0] for call in self.docker.caddy_calls]
         self.assertEqual(operations, ["validate", "reload"])
 
-    def test_new_container_uses_public_image_readonly_mount_and_no_host_ports(self):
+    def test_new_container_uses_local_image_separate_mounts_and_no_host_ports(self):
         self.run_deploy()
         command = next(
             command for command in self.docker.commands if command[1] == "run"
         )
-        self.assertIn("docker.io/library/caddy:2-alpine", command)
+        build = next(
+            command for command in self.docker.commands if command[1] == "build"
+        )
+        self.assertEqual(build[-1], str(self.repo / "backend"))
+        self.assertEqual(command[-1], build[build.index("--tag") + 1])
         self.assertEqual(command[command.index("--network") + 1], self.args.network)
         self.assertEqual(
             command[command.index("--label") + 1], f"{deploy_vm.OWNER_LABEL}=true"
         )
-        self.assertEqual(
-            command[command.index("--mount") + 1],
+        mounts = option_values(command, "--mount")
+        self.assertIn(
             f"type=bind,src={self.args.deploy_root},dst=/srv/wedding-site,readonly",
+            mounts,
         )
-        self.assertEqual(
-            command[command.index(deploy_vm.IMAGE) + 1 :],
-            [
-                "caddy",
-                "file-server",
-                "--root",
-                "/srv/wedding-site/current",
-                "--listen",
-                ":80",
-            ],
+        self.assertIn(
+            f"type=bind,src={self.args.deploy_root / 'data'},dst=/data", mounts
         )
+        data = self.args.deploy_root / "data"
+        self.assertEqual(stat.S_IMODE(data.stat().st_mode), 0o700)
+        self.chown.assert_any_call(data, 10001, 10001)
         flags = ("-p", "-P", "--publish", "--publish-all")
         self.assertFalse(any(flag in command for flag in flags))
+
+    def test_image_uses_public_python_base_and_nonroot_user(self):
+        dockerfile = (SCRIPT.parent.parent / "backend/Dockerfile").read_text()
+        self.assertIn("FROM python:3.13-slim", dockerfile)
+        self.assertIn("USER 10001:10001", dockerfile)
+        self.assertIn("SITE_ROOT=/srv/wedding-site/current", dockerfile)
+        self.assertIn("RSVP_DB_PATH=/data/rsvp.sqlite3", dockerfile)
+        self.assertIn('"0.0.0.0:8000"', dockerfile)
+
+    def test_sqlite_database_is_preserved_through_first_and_repeat_deploy(self):
+        database = self.seed_database()
+        original = self.database_snapshot(database)
+        for _ in range(2):
+            self.run_deploy()
+            self.assertEqual(self.database_snapshot(database), original)
+            with closing(sqlite3.connect(database)) as connection:
+                self.assertEqual(
+                    connection.execute("SELECT name FROM responses").fetchone(),
+                    ("Соня",),
+                )
+        self.assertFalse(
+            any(command[1:3] == ["image", "rm"] for command in self.docker.commands)
+        )
+
+    def test_health_check_uses_python_and_api_endpoint(self):
+        self.run_deploy()
+        checks = [
+            command
+            for command in self.docker.commands
+            if command[1:3] == ["exec", self.args.container]
+        ]
+        self.assertTrue(checks)
+        for command in checks:
+            self.assertIn(command[3], ("python", "python3"))
+            self.assertIn("http://127.0.0.1:8000/api/health", " ".join(command))
+            self.assertNotIn("wget", command)
 
     def test_foreign_container_is_rejected_before_changes(self):
         self.seed_previous_release()
@@ -229,7 +362,32 @@ class DeployTests(unittest.TestCase):
             self.run_deploy()
         self.assertEqual(self.filesystem_snapshot(), before)
         operations = [command[1] for command in self.docker.commands]
-        self.assertFalse(set(operations) & {"run", "start", "exec"})
+        self.assertFalse(
+            set(operations) & {"build", "run", "start", "stop", "rename", "rm", "exec"}
+        )
+
+    def test_existing_data_mount_must_be_owned_bind_and_writable(self):
+        self.seed_previous_release()
+        container = self.docker.containers[self.args.container]
+        variants = (
+            ("bind", self.base / "other-data", True),
+            ("bind", self.args.deploy_root / "data", False),
+            ("volume", self.args.deploy_root / "data", True),
+        )
+        container["Mounts"].append({"Destination": "/data"})
+        for kind, source, writable in variants:
+            with self.subTest(kind=kind, source=source, writable=writable):
+                container["Mounts"][-1].update(
+                    Type=kind, Source=str(source), RW=writable
+                )
+                before = self.filesystem_snapshot()
+                with self.assertRaisesRegex(ValueError, "Каталог базы.*отличается"):
+                    self.run_deploy()
+                self.assertEqual(self.filesystem_snapshot(), before)
+        operations = {command[1] for command in self.docker.commands}
+        self.assertFalse(
+            operations & {"build", "run", "start", "stop", "rename", "rm", "exec"}
+        )
 
     def test_domain_collision_is_rejected_before_changes(self):
         self.args.caddyfile.write_text(
@@ -245,6 +403,9 @@ class DeployTests(unittest.TestCase):
 
     def assert_rollback(self, operation, previous=False):
         target = self.seed_previous_release() if previous else None
+        existing = copy.deepcopy(self.docker.containers.get(self.args.container))
+        database = self.seed_database()
+        stored = self.database_snapshot(database)
         original = self.args.caddyfile.read_text()
         inode = self.args.caddyfile.stat().st_ino
         self.docker.failures[operation] = 1
@@ -260,6 +421,108 @@ class DeployTests(unittest.TestCase):
             self.assertFalse(current.is_symlink())
             self.assertFalse(current.exists())
         self.assertEqual(self.docker.caddy_calls[-1][0:2], ("reload", original))
+        self.assertEqual(self.docker.containers.get(self.args.container), existing)
+        self.assertEqual(self.database_snapshot(database), stored)
+        self.assertEqual(len(self.docker.containers), 2 if previous else 1)
+
+    def test_static_container_is_migrated_after_image_build(self):
+        self.seed_previous_release()
+        previous = self.docker.containers[self.args.container]
+        self.args.caddyfile.write_text(
+            OTHER_SITE + "\n# BEGIN wedding-site-web\nwedding.example.com {\n"
+            "    reverse_proxy wedding-site-web:80\n}\n# END wedding-site-web\n"
+        )
+        self.run_deploy()
+        commands = self.docker.commands
+        operations = [command[1] for command in commands]
+        self.assertLess(operations.index("build"), operations.index("stop"))
+        self.assertLess(operations.index("rename"), operations.index("run"))
+        self.assertIsNot(self.docker.containers[self.args.container], previous)
+        backup = next(command[3] for command in commands if command[1] == "rename")
+        self.assertTrue(backup.startswith("wedding-site-web-previous-"))
+        self.assertIn(["docker", "rm", backup], commands)
+        self.assertIn(
+            "reverse_proxy wedding-site-web:8000", self.args.caddyfile.read_text()
+        )
+
+    def test_failed_build_keeps_serving_previous_container_and_release(self):
+        previous = self.seed_previous_release()
+        existing = copy.deepcopy(self.docker.containers[self.args.container])
+        self.docker.failures["build"] = 1
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.run_deploy()
+        self.assertEqual(os.readlink(self.args.deploy_root / "current"), previous)
+        self.assertEqual(self.docker.containers[self.args.container], existing)
+        self.assertEqual(self.args.caddyfile.read_text(), OTHER_SITE)
+        operations = {command[1] for command in self.docker.commands}
+        self.assertFalse(operations & {"run", "stop", "rename", "rm", "exec"})
+
+    def test_failed_new_container_run_restores_previous_container_and_release(self):
+        previous = self.seed_previous_release()
+        existing = copy.deepcopy(self.docker.containers[self.args.container])
+        self.docker.failures["run"] = 1
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.run_deploy()
+        self.assertEqual(os.readlink(self.args.deploy_root / "current"), previous)
+        self.assertEqual(self.docker.containers[self.args.container], existing)
+        self.assertEqual(
+            set(self.docker.containers),
+            {self.args.proxy_container, self.args.container},
+        )
+        self.assertEqual(self.args.caddyfile.read_text(), OTHER_SITE)
+
+    def test_successful_deploy_keeps_unrelated_container_untouched(self):
+        self.seed_previous_release()
+        foreign = {"Config": {"Labels": {}}, "State": {"Running": True}}
+        self.docker.containers["another-app"] = copy.deepcopy(foreign)
+        self.run_deploy()
+        self.assertEqual(self.docker.containers["another-app"], foreign)
+        mutations = [
+            command
+            for command in self.docker.commands
+            if command[1] in ("stop", "rename", "rm", "start")
+        ]
+        self.assertFalse(any("another-app" in command for command in mutations))
+
+    def test_http_failure_restores_old_container_running_state_and_database(self):
+        previous = self.seed_previous_release()
+        database = self.seed_database()
+        stored = self.database_snapshot(database)
+        for running in (True, False):
+            with self.subTest(running=running):
+                self.docker.containers[self.args.container]["State"]["Running"] = (
+                    running
+                )
+                existing = copy.deepcopy(self.docker.containers[self.args.container])
+                self.docker.failures["health"] = 10
+                with self.assertRaisesRegex(ValueError, "Контейнер не отвечает"):
+                    self.run_deploy()
+                self.assertEqual(self.docker.containers[self.args.container], existing)
+                self.assertEqual(
+                    set(self.docker.containers),
+                    {self.args.proxy_container, self.args.container},
+                )
+                self.assertEqual(
+                    os.readlink(self.args.deploy_root / "current"), previous
+                )
+                self.assertEqual(self.args.caddyfile.read_text(), OTHER_SITE)
+                self.assertEqual(self.database_snapshot(database), stored)
+
+    def test_first_http_failure_removes_only_new_container(self):
+        foreign = {"Config": {"Labels": {}}, "State": {"Running": True}}
+        self.docker.containers["another-app"] = copy.deepcopy(foreign)
+        self.docker.failures["health"] = 10
+        with self.assertRaisesRegex(ValueError, "Контейнер не отвечает"):
+            self.run_deploy()
+        self.assertNotIn(self.args.container, self.docker.containers)
+        self.assertEqual(self.docker.containers["another-app"], foreign)
+        self.assertFalse((self.args.deploy_root / "current").exists())
+        mutations = [
+            command
+            for command in self.docker.commands
+            if command[1] in ("stop", "rename", "rm", "start")
+        ]
+        self.assertFalse(any("another-app" in command for command in mutations))
 
     def test_first_validate_failure_restores_config_and_removes_current(self):
         self.assert_rollback("validate")
@@ -325,7 +588,7 @@ class DeployTests(unittest.TestCase):
         self.assertIn(
             "handle_path /rover/* {\n        reverse_proxy rover-rally-app:8787", config
         )
-        self.assertIn("handle {\n        reverse_proxy custom-wedding:80", config)
+        self.assertIn("handle {\n        reverse_proxy custom-wedding:8000", config)
         self.assertTrue(config.startswith(OTHER_SITE))
         self.assertIn("# rover-network: rover-rally", config)
         mutations = [command[1:3] for command in self.docker.commands]
@@ -449,7 +712,7 @@ class DeployTests(unittest.TestCase):
         config = self.args.caddyfile.read_text()
         own = config.split("# BEGIN wedding-site-web\n", 1)[1]
         self.assertNotIn("/rover", own)
-        self.assertIn("reverse_proxy wedding-site-web:80", own)
+        self.assertIn("reverse_proxy wedding-site-web:8000", own)
 
     def test_failed_rover_change_restores_previous_route_and_release(self):
         self.enable_rover()
