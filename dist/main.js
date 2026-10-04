@@ -81,24 +81,3 @@ document.querySelectorAll('[name="attendance"]').forEach((radio) => {
   radio.addEventListener("change", updateAttendance);
 });
 updateAttendance();
-
-function setPalette(theme) {
-  document.documentElement.dataset.theme = theme;
-  const url = new URL(window.location.href);
-  url.searchParams.set("theme", theme);
-  window.history.replaceState(null, "", url);
-  document.querySelectorAll("[data-theme-choice]").forEach((button) => {
-    button.setAttribute("aria-pressed", button.dataset.themeChoice === theme);
-  });
-  const paper = getComputedStyle(document.documentElement)
-    .getPropertyValue("--paper")
-    .trim();
-  document.querySelector('meta[name="theme-color"]').content = paper;
-}
-
-document.querySelectorAll("[data-theme-choice]").forEach((button) => {
-  button.addEventListener("click", () =>
-    setPalette(button.dataset.themeChoice),
-  );
-});
-setPalette(document.documentElement.dataset.theme);
