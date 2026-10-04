@@ -1,2 +1,4 @@
 .DS_Store
 /previews/http-server.log
+*.local.env
+__pycache__/
