@@ -31,6 +31,8 @@ def arguments():
     )
     parser.add_argument("--deploy-root", type=Path, default=Path("/srv/wedding-site"))
     parser.add_argument("--container", default="wedding-site-web")
+    parser.add_argument("--rover-upstream", help="Game Docker container:port")
+    parser.add_argument("--rover-network", help="Existing game Docker network")
     return parser.parse_args()
 
 
@@ -45,6 +47,7 @@ def docker(*args, capture=False):
 
 
 def validate_inputs(args, repo):
+    validate_rover_settings(args.rover_upstream, args.rover_network)
     args.domain = args.domain.lower()
     pattern = r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+"
     if len(args.domain) > 253 or not re.fullmatch(pattern, args.domain):
@@ -63,6 +66,63 @@ def validate_inputs(args, repo):
     if current.exists() and not current.is_symlink():
         raise ValueError(
             "current уже является обычным файлом/каталогом: выбери другой --deploy-root."
+        )
+
+
+def validate_rover_settings(upstream, network):
+    if (upstream is None) != (network is None):
+        raise ValueError("Передай --rover-upstream и --rover-network вместе.")
+    if upstream is None and network is None:
+        return
+    match = re.fullmatch(r"([a-zA-Z0-9][a-zA-Z0-9_.-]*):([0-9]+)", upstream)
+    if not match or not 1 <= int(match[2]) <= 65535:
+        raise ValueError("Передай --rover-upstream как имя-контейнера:порт (1–65535).")
+    if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]*", network):
+        raise ValueError("Некорректное имя Docker-сети игры.")
+
+
+def rover_settings(args, managed):
+    if "/rover" not in managed and "# rover-network:" not in managed:
+        return args.rover_upstream, args.rover_network
+    networks = re.findall(r"^\s*# rover-network: (\S+)[ \t]*$", managed, re.M)
+    upstreams = re.findall(
+        r"^\s*handle_path /rover/\* \{\s*\n"
+        r"[ \t]*reverse_proxy (\S+)[ \t]*\n[ \t]*\}",
+        managed,
+        re.M,
+    )
+    if len(networks) != 1 or len(upstreams) != 1:
+        raise ValueError(
+            "Не удалось прочитать прежний маршрут /rover/ в блоке сайта. Проверь Caddyfile."
+        )
+    validate_rover_settings(upstreams[0], networks[0])
+    if args.rover_upstream is not None:
+        return args.rover_upstream, args.rover_network
+    return upstreams[0], networks[0]
+
+
+def site_routes(args):
+    if args.rover_upstream is None:
+        return f"    reverse_proxy {args.container}:80\n"
+    return (
+        f"    # rover-network: {args.rover_network}\n"
+        "    redir /rover /rover/?{query} 308\n"
+        "    handle_path /rover/* {\n"
+        f"        reverse_proxy {args.rover_upstream}\n"
+        "    }\n"
+        "    handle {\n"
+        f"        reverse_proxy {args.container}:80\n"
+        "    }\n"
+    )
+
+
+def check_rover_network(args, proxy):
+    if (
+        args.rover_network
+        and args.rover_network not in proxy["NetworkSettings"]["Networks"]
+    ):
+        raise ValueError(
+            "Общий Caddy не подключён к Docker-сети игры. Подключи сеть до деплоя."
         )
 
 
@@ -125,6 +185,10 @@ def new_proxy_config(args, original):
     if original.count(begin) != original.count(end) or original.count(begin) > 1:
         raise ValueError("Повреждены метки блока сайта в Caddyfile.")
     pattern = re.compile(rf"^{re.escape(begin)}\n.*?^{re.escape(end)}\n?", re.M | re.S)
+    managed = pattern.search(original)
+    args.rover_upstream, args.rover_network = rover_settings(
+        args, managed[0] if managed else ""
+    )
     base = pattern.sub("", original)
     if begin in base or end in base:
         raise ValueError("Не удалось найти границы блока сайта в Caddyfile.")
@@ -132,9 +196,7 @@ def new_proxy_config(args, original):
         raise ValueError(
             "Домен уже задан вне управляемого блока. Проверь существующую настройку."
         )
-    block = (
-        f"{begin}\n{args.domain} {{\n    reverse_proxy {args.container}:80\n}}\n{end}\n"
-    )
+    block = f"{begin}\n{args.domain} {{\n{site_routes(args)}}}\n{end}\n"
     return base.rstrip() + "\n\n" + block
 
 
@@ -271,11 +333,13 @@ def deploy(args, repo):
     validate_inputs(args, repo)
     docker("info", capture=True)
     docker("network", "inspect", args.network, capture=True)
-    inside_path = proxy_config_path(args, inspect_container(args.proxy_container))
+    proxy = inspect_container(args.proxy_container)
+    inside_path = proxy_config_path(args, proxy)
     existing = inspect_container(args.container)
     check_site_container(args, existing)
     original = args.caddyfile.read_text(encoding="utf-8")
     updated = new_proxy_config(args, original)
+    check_rover_network(args, proxy)
     current = args.deploy_root / "current"
     previous = os.readlink(current) if current.is_symlink() else None
     release = create_release(repo, args.deploy_root)
