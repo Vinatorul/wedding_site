@@ -235,15 +235,6 @@ h1 > span:nth-child(3) {
   border-radius: 45% 54% 43% 38% / 45% 31% 58% 48%;
   transform: rotate(8deg);
 }
-.hero-spark {
-  position: absolute;
-  top: 11px;
-  left: 4%;
-  font-size: 86px;
-  line-height: 1;
-  transform: rotate(10deg);
-  z-index: 3;
-}
 .couple-placeholder {
   position: absolute;
   inset: 112px 18px 16px 15px;
@@ -837,6 +828,8 @@ input:disabled {
   padding: 56px 0 30px;
 }
 .footer-prelude {
+  display: inline-block;
+  max-width: 100%;
   font-size: 30px;
 }
 .footer > p {
@@ -974,11 +967,6 @@ input:disabled {
   }
   .accent-blob {
     inset: 47px 10px 0;
-  }
-  .hero-spark {
-    font-size: 58px;
-    top: 33px;
-    left: 3%;
   }
   .couple-placeholder {
     inset: 90px 28px 0;
