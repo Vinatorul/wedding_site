@@ -679,6 +679,11 @@ h1 > span:nth-child(3) {
   max-width: 610px;
   margin-bottom: 42px;
 }
+.team-photo {
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  object-position: center 20%;
+}
 .team-card-footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -704,7 +709,7 @@ h1 > span:nth-child(3) {
   display: flex;
   gap: 8px;
 }
-.team-social-placeholder {
+.team-social-link {
   display: grid;
   place-items: center;
   width: 34px;
@@ -715,14 +720,14 @@ h1 > span:nth-child(3) {
   background: transparent;
   color: var(--accent-text);
 }
-.team-social-placeholder svg {
+.team-social-link svg {
+  display: block;
   width: 20px;
   height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill: currentColor;
+}
+.team-social-link:hover {
+  border-color: var(--accent-text);
 }
 .rsvp-section {
   display: grid;
