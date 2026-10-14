@@ -6,6 +6,10 @@
 
 Страницу и API анкеты обслуживает Gunicorn на внутреннем порту 8000. Caddy передаёт ему запросы через Docker-сеть; порт на виртуалке не открывается. Node.js и npm для деплоя не нужны. Если используешь `npx` для правок проекта, `.npmrc` задаёт публичный `https://registry.npmjs.org/`.
 
+На чистой виртуалке сначала установить Docker Engine и Buildx по [официальной инструкции](https://docs.docker.com/engine/install/ubuntu/), затем запустить один общий Caddy с постоянными томами `/data` и `/config`, смонтированным Caddyfile и открытыми портами 80/443. Для совместного размещения приглашения и Rover отдельный прокси игры не требуется: игру запускать без `--standalone`, а общий Caddy подключить к сетям обоих приложений.
+
+При первом запуске приложения сами создают пустые SQLite. Создавать файлы баз вручную или копировать их со старой виртуалки не требуется.
+
 ## Подготовка
 
 Выполняй команды на виртуалке в Bash. Сначала клонируй репозиторий под своим обычным пользователем:
@@ -20,7 +24,7 @@ cd wedding_site
 Посмотри список контейнеров:
 
 ```sh
-sudo env DOCKER_API_VERSION=1.43 docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
+sudo docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
 ```
 
 Найди Caddy, который обслуживает порты 80 и 443. Заполни параметры в терминале; они не попадут в репозиторий:
@@ -28,9 +32,9 @@ sudo env DOCKER_API_VERSION=1.43 docker ps --format 'table {{.Names}}\t{{.Image}
 ```sh
 read -rp 'Домен сайта без https://: ' SITE_DOMAIN
 read -rp 'Имя общего Caddy-контейнера: ' PROXY_CONTAINER
-sudo env DOCKER_API_VERSION=1.43 docker inspect "$PROXY_CONTAINER" \
+sudo docker inspect "$PROXY_CONTAINER" \
   --format '{{json .NetworkSettings.Networks}}'
-sudo env DOCKER_API_VERSION=1.43 docker inspect "$PROXY_CONTAINER" \
+sudo docker inspect "$PROXY_CONTAINER" \
   --format '{{json .Mounts}}'
 read -rp 'Docker-сеть общего прокси: ' PROXY_NETWORK
 read -rp 'Полный путь к Caddyfile на виртуалке: ' CADDY_FILE
@@ -38,12 +42,12 @@ read -rp 'Полный путь к Caddyfile на виртуалке: ' CADDY_FI
 
 В первом выводе возьми имя сети, во втором — `Source` у Caddyfile. Если смонтирован каталог, допиши имя файла внутри него. Параметр `--caddyfile` принимает путь на виртуалке; путь внутри контейнера скрипт определит сам.
 
-В этих командах `DOCKER_API_VERSION=1.43` обеспечивает совместимость с Docker на текущей виртуалке. На другом сервере с более новым Docker этот параметр можно убрать.
+В основных командах `DOCKER_API_VERSION` не задаётся: Docker согласовывает версию API автоматически. На Docker 29 не использовать значение `1.43`; ранее экспортированное значение убрать командой `unset DOCKER_API_VERSION`. Для старого сервера, поддерживающего максимум API 1.43, значение передавать отдельно при запуске: например, `sudo env DOCKER_API_VERSION=1.43 docker ps`.
 
 ## Первый запуск
 
 ```sh
-sudo env DOCKER_API_VERSION=1.43 python3 scripts/deploy-vm.py \
+sudo python3 scripts/deploy-vm.py \
   --domain "$SITE_DOMAIN" \
   --network "$PROXY_NETWORK" \
   --proxy-container "$PROXY_CONTAINER" \
@@ -73,7 +77,7 @@ sudo env DOCKER_API_VERSION=1.43 python3 scripts/deploy-vm.py \
 ```sh
 read -rp 'Контейнер игры и внутренний порт, например rover-rally-app:8787: ' ROVER_UPSTREAM
 read -rp 'Docker-сеть игры: ' ROVER_NETWORK
-sudo env DOCKER_API_VERSION=1.43 python3 scripts/deploy-vm.py \
+sudo python3 scripts/deploy-vm.py \
   --domain "$SITE_DOMAIN" \
   --network "$PROXY_NETWORK" \
   --proxy-container "$PROXY_CONTAINER" \
@@ -103,8 +107,8 @@ curl --fail --head "https://${SITE_DOMAIN}/"
 Проверка внутри скрипта подтверждает работу контейнера сайта. Внешний DNS и выдачу сертификата проверяет последняя команда. Если HTTPS не открылся, посмотри логи общего прокси и сайта:
 
 ```sh
-sudo env DOCKER_API_VERSION=1.43 docker logs --tail 100 "$PROXY_CONTAINER"
-sudo env DOCKER_API_VERSION=1.43 docker logs --tail 100 wedding-site-web
+sudo docker logs --tail 100 "$PROXY_CONTAINER"
+sudo docker logs --tail 100 wedding-site-web
 ```
 
 Если передавал другое имя через `--container`, подставь его и здесь.
@@ -115,7 +119,7 @@ sudo env DOCKER_API_VERSION=1.43 docker logs --tail 100 wedding-site-web
 
 ```sh
 git pull --ff-only
-sudo env DOCKER_API_VERSION=1.43 python3 scripts/deploy-vm.py \
+sudo python3 scripts/deploy-vm.py \
   --domain "$SITE_DOMAIN" \
   --network "$PROXY_NETWORK" \
   --proxy-container "$PROXY_CONTAINER" \
