@@ -2,7 +2,6 @@ const tasksMain = document.getElementById("tasks-main");
 const tasksIntro = document.getElementById("tasks-intro");
 const tasksChecklist = document.getElementById("tasks-checklist");
 const tasksList = document.getElementById("tasks-list");
-const tasksProgress = document.getElementById("tasks-progress");
 const tasksStatus = document.getElementById("tasks-status");
 const getTasksButton = document.getElementById("get-tasks");
 const retryTasksButton = document.getElementById("retry-tasks");
@@ -23,6 +22,7 @@ function setTasksBusy(busy) {
 
 function showTasksStatus(message, isError = false) {
   tasksStatus.textContent = message;
+  tasksStatus.closest(".tasks-feedback").hidden = !message;
   tasksStatus.classList.toggle("is-error", isError);
   retryTasksButton.hidden = true;
 }
@@ -54,15 +54,9 @@ function createTaskItem(task) {
   const checkbox = item.querySelector("input");
   const label = item.querySelector("label");
   const button = item.querySelector("button");
-  const kind = item.querySelector(".task-kind");
   item.dataset.taskId = task.id;
   item.classList.toggle("is-completed", task.completed);
   item.classList.toggle("is-optional", task.optional);
-  kind.id = `task-kind-${task.id}`;
-  kind.textContent = task.optional
-    ? "Необязательно · С нейронкой"
-    : "Обязательное";
-  checkbox.setAttribute("aria-describedby", kind.id);
   checkbox.id = `task-${task.id}`;
   checkbox.checked = task.completed;
   label.htmlFor = checkbox.id;
@@ -78,35 +72,15 @@ function renderTasks(state) {
   tasksIntro.hidden = state.assigned;
   tasksChecklist.hidden = !state.assigned;
   tasksList.replaceChildren(...state.tasks.map(createTaskItem));
-  tasksProgress.textContent = taskProgress(state.tasks);
-}
-
-function taskProgress(tasks) {
-  const required = tasks.filter((task) => !task.optional);
-  const optional = tasks.filter((task) => task.optional);
-  const completed = required.filter((task) => task.completed).length;
-  const optionalCompleted = optional.filter((task) => task.completed).length;
-  const progress =
-    completed === required.length && completed > 0
-      ? "Все обязательные задания выполнены!"
-      : `Обязательные: ${completed} из ${required.length}`;
-  return optional.length
-    ? `${progress} · С нейронкой: ${optionalCompleted} из ${optional.length}`
-    : progress;
 }
 
 async function loadTasks() {
   if (tasksBusy) return;
   setTasksBusy(true);
-  showTasksStatus("Загружаем задания…");
+  showTasksStatus("");
   try {
     const state = await requestTasks("/api/tasks");
     renderTasks(state);
-    showTasksStatus(
-      !state.assigned && !state.available
-        ? "Задания скоро появятся. Загляни чуть позже."
-        : "",
-    );
   } catch {
     showTasksError(
       "Не удалось загрузить задания. Попробуй ещё раз.",
@@ -124,8 +98,7 @@ async function assignTasks() {
   showTasksStatus("");
   try {
     renderTasks(await requestTasks("/api/tasks", "POST", {}));
-    showTasksStatus("Задания готовы!");
-    document.getElementById("checklist-title").focus({ preventScroll: true });
+    tasksList.querySelector("input")?.focus({ preventScroll: true });
   } catch (error) {
     if (error.status === 409) showTasksStatus(error.message);
     else
@@ -142,15 +115,12 @@ async function assignTasks() {
 async function updateTask(id, completed, control = "button") {
   if (tasksBusy) return;
   setTasksBusy(true);
-  showTasksStatus("Сохраняем отметку…");
+  showTasksStatus("");
   try {
     renderTasks(await requestTasks(`/api/tasks/${id}`, "PATCH", { completed }));
     tasksList
       .querySelector(`[data-task-id="${id}"] ${control}`)
       ?.focus({ preventScroll: true });
-    showTasksStatus(
-      completed ? "Сохранено. Задание выполнено." : "Сохранено. Отметка снята.",
-    );
   } catch {
     showTasksError("Не удалось сохранить отметку. Попробуй ещё раз.", () =>
       updateTask(id, completed, control),
