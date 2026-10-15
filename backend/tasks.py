@@ -3,6 +3,7 @@ import secrets
 import sqlite3
 from contextlib import closing
 from pathlib import Path
+from random import SystemRandom
 
 from flask import Blueprint, current_app, jsonify, request
 
@@ -22,6 +23,7 @@ SCHEMAS = (
         position INTEGER NOT NULL,
         text TEXT NOT NULL,
         completed INTEGER NOT NULL DEFAULT 0 CHECK (completed IN (0, 1)),
+        optional INTEGER NOT NULL DEFAULT 0 CHECK (optional IN (0, 1)),
         UNIQUE (participant_token, position)
     )
     """,
@@ -32,6 +34,34 @@ blueprint = Blueprint("tasks", __name__)
 def initialize_tasks_database(connection):
     for schema in SCHEMAS:
         connection.execute(schema)
+    columns = {
+        row[1] for row in connection.execute("PRAGMA table_info(participant_tasks)")
+    }
+    if "optional" not in columns:
+        connection.execute(
+            "ALTER TABLE participant_tasks ADD COLUMN optional "
+            "INTEGER NOT NULL DEFAULT 0 CHECK (optional IN (0, 1))"
+        )
+
+
+def validate_texts(texts):
+    if not isinstance(texts, list):
+        raise ValueError("Tasks must be a list")
+    if any(not isinstance(text, str) or not text.strip() for text in texts):
+        raise ValueError("Tasks must contain nonempty text")
+    return texts.copy()
+
+
+def validate_group(group):
+    if not isinstance(group, dict) or set(group) != {"count", "optional", "tasks"}:
+        raise ValueError("Random task groups must contain count, optional and tasks")
+    texts = list(dict.fromkeys(validate_texts(group["tasks"])))
+    count, optional = group["count"], group["optional"]
+    if type(count) is not int or not 1 <= count <= len(texts):
+        raise ValueError("Task count must fit the number of distinct variants")
+    if type(optional) is not bool:
+        raise ValueError("Optional must be a boolean")
+    return {"count": count, "optional": optional, "tasks": texts}
 
 
 def load_catalog(catalog):
@@ -40,17 +70,13 @@ def load_catalog(catalog):
         catalog = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(catalog, dict) or set(catalog) != {"common", "random_groups"}:
         raise ValueError("Task catalog must contain common and random_groups lists")
-    common, groups = catalog["common"], catalog["random_groups"]
-    if not isinstance(common, list) or not isinstance(groups, list):
-        raise ValueError("Task catalog must contain lists")
-    if any(not isinstance(group, list) or not group for group in groups):
-        raise ValueError("Random task groups must be nonempty lists")
-    texts = common + [text for group in groups for text in group]
-    if any(not isinstance(text, str) or not text.strip() for text in texts):
-        raise ValueError("Tasks must contain nonempty text")
+    common = validate_texts(catalog["common"])
+    groups = catalog["random_groups"]
+    if not isinstance(groups, list):
+        raise ValueError("Random task groups must be a list")
     return {
-        "common": common.copy(),
-        "random_groups": [group.copy() for group in groups],
+        "common": common,
+        "random_groups": [validate_group(group) for group in groups],
     }
 
 
@@ -65,7 +91,7 @@ def task_state(connection, token):
         "SELECT 1 FROM task_participants WHERE token = ?", (token,)
     ).fetchone()
     rows = connection.execute(
-        "SELECT id, text, completed FROM participant_tasks "
+        "SELECT id, text, completed, optional FROM participant_tasks "
         "WHERE participant_token = ? ORDER BY position",
         (token,),
     ).fetchall()
@@ -75,8 +101,13 @@ def task_state(connection, token):
         "assigned": bool(assigned),
         "available": bool(catalog["common"] or catalog["random_groups"]),
         "tasks": [
-            {"id": task_id, "text": text, "completed": bool(completed)}
-            for task_id, text, completed in rows
+            {
+                "id": task_id,
+                "text": text,
+                "completed": bool(completed),
+                "optional": bool(optional),
+            }
+            for task_id, text, completed, optional in rows
         ],
     }
 
@@ -90,9 +121,14 @@ def json_object():
 
 def select_tasks():
     catalog = current_app.config["TASK_CATALOG"]
-    return catalog["common"] + [
-        secrets.choice(group) for group in catalog["random_groups"]
-    ]
+    tasks = [(text, False) for text in catalog["common"]]
+    random = SystemRandom()
+    for group in catalog["random_groups"]:
+        tasks.extend(
+            (text, group["optional"])
+            for text in random.sample(group["tasks"], group["count"])
+        )
+    return tasks
 
 
 def assignment_response(state, token):
@@ -124,17 +160,17 @@ def assign_tasks():
         state = task_state(connection, token)
         if state["assigned"]:
             return jsonify(state), 200
-        texts = select_tasks()
-        if not texts:
+        tasks = select_tasks()
+        if not tasks:
             return jsonify(
                 ok=False, error="Задания скоро появятся. Загляни чуть позже."
             ), 409
         token = secrets.token_urlsafe(32)
         connection.execute("INSERT INTO task_participants (token) VALUES (?)", (token,))
         connection.executemany(
-            "INSERT INTO participant_tasks (participant_token, position, text) "
-            "VALUES (?, ?, ?)",
-            [(token, position, text) for position, text in enumerate(texts)],
+            "INSERT INTO participant_tasks (participant_token, position, text, optional) "
+            "VALUES (?, ?, ?, ?)",
+            [(token, position, *task) for position, task in enumerate(tasks)],
         )
         state = task_state(connection, token)
     return assignment_response(state, token)

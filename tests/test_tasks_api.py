@@ -9,7 +9,10 @@ from backend.tasks import COOKIE_AGE, COOKIE_NAME
 
 CATALOG = {
     "common": ["Общее задание 1", "Общее задание 2"],
-    "random_groups": [["Вариант 1А", "Вариант 1Б"], ["Вариант 2А", "Вариант 2Б"]],
+    "random_groups": [
+        {"count": 1, "optional": False, "tasks": ["Вариант 1А", "Вариант 1Б"]},
+        {"count": 1, "optional": True, "tasks": ["Вариант 2А", "Вариант 2Б"]},
+    ],
 }
 
 
@@ -59,7 +62,9 @@ class TasksTests(unittest.TestCase):
         self.assertEqual(len(tasks), 4)
         self.assertEqual([task["text"] for task in tasks[:2]], CATALOG["common"])
         for task, group in zip(tasks[2:], CATALOG["random_groups"]):
-            self.assertIn(task["text"], group)
+            self.assertIn(task["text"], group["tasks"])
+            self.assertEqual(task["optional"], group["optional"])
+        self.assertTrue(all(task["optional"] is False for task in tasks[:2]))
         self.assertTrue(all(type(task["id"]) is int for task in tasks))
         self.assertTrue(all(task["completed"] is False for task in tasks))
         self.assertEqual(self.participant_count(), 1)
@@ -275,7 +280,7 @@ class TasksTests(unittest.TestCase):
     def test_only_common_and_only_random_catalogs_can_be_assigned(self):
         catalogs = (
             {"common": ["Общее"], "random_groups": []},
-            {"common": [], "random_groups": [["Вариант А", "Вариант Б"]]},
+            {"common": [], "random_groups": [CATALOG["random_groups"][0]]},
         )
         for catalog in catalogs:
             with self.subTest(catalog=catalog):
@@ -283,6 +288,97 @@ class TasksTests(unittest.TestCase):
                 response = client.post("/api/tasks", json={})
                 self.assertEqual(response.status_code, 201)
                 self.assertEqual(len(response.json["tasks"]), 1)
+
+    def test_actual_catalog_assigns_four_common_two_distinct_and_one_optional(self):
+        self.app = self.make_app(None)
+        self.client = self.app.test_client()
+        catalog = self.app.config["TASK_CATALOG"]
+        self.assertEqual(len(catalog["common"]), 4)
+        self.assertEqual(
+            [len(group["tasks"]) for group in catalog["random_groups"]], [8, 4]
+        )
+        response = self.client.post("/api/tasks", json={})
+        self.assertEqual(response.status_code, 201)
+        tasks = response.json["tasks"]
+        self.assertEqual(len(tasks), 7)
+        self.assertEqual([task["text"] for task in tasks[:4]], catalog["common"])
+        mandatory = [task["text"] for task in tasks[4:6]]
+        self.assertEqual(len(set(mandatory)), 2)
+        self.assertTrue(set(mandatory).issubset(catalog["random_groups"][0]["tasks"]))
+        self.assertTrue(all(task["optional"] is False for task in tasks[:6]))
+        self.assertTrue(tasks[6]["optional"])
+        self.assertIn(tasks[6]["text"], catalog["random_groups"][1]["tasks"])
+        self.assertEqual(self.client.get("/api/tasks").json, response.json)
+        restarted = self.restart_client(None)
+        self.assertEqual(restarted.post("/api/tasks", json={}).json, response.json)
+
+    def test_optional_completion_and_flag_persist_across_restart(self):
+        initial = self.client.post("/api/tasks", json={}).json
+        optional = initial["tasks"][-1]
+        self.assertTrue(optional["optional"])
+        path = f"/api/tasks/{optional['id']}"
+        marked = self.client.patch(path, json={"completed": True})
+        restarted = self.restart_client(CATALOG)
+        self.assertEqual(restarted.get("/api/tasks").json, marked.json)
+        self.assertTrue(marked.json["tasks"][-1]["completed"])
+        self.assertTrue(marked.json["tasks"][-1]["optional"])
+
+    def test_legacy_schema_keeps_saved_tasks_completed_and_required(self):
+        with closing(sqlite3.connect(self.database)) as connection, connection:
+            connection.execute("DROP TABLE participant_tasks")
+            connection.execute(
+                "CREATE TABLE participant_tasks (id INTEGER PRIMARY KEY, "
+                "participant_token TEXT NOT NULL, position INTEGER NOT NULL, "
+                "text TEXT NOT NULL, completed INTEGER NOT NULL DEFAULT 0)"
+            )
+            connection.execute(
+                "INSERT INTO task_participants (token) VALUES ('legacy')"
+            )
+            connection.execute(
+                "INSERT INTO participant_tasks VALUES (1, 'legacy', 0, ?, 1)",
+                ("Задание до обновления",),
+            )
+        self.make_app(CATALOG)
+        self.client.set_cookie(COOKIE_NAME, "legacy")
+        state = self.client.get("/api/tasks").json
+        self.assertEqual(
+            state["tasks"],
+            [
+                {
+                    "id": 1,
+                    "text": "Задание до обновления",
+                    "completed": True,
+                    "optional": False,
+                }
+            ],
+        )
+        self.assertEqual(self.client.post("/api/tasks", json={}).json, state)
+
+    def test_catalog_rejects_invalid_counts_flags_and_task_text(self):
+        groups = (
+            {"count": 0, "optional": False, "tasks": ["А"]},
+            {"count": 2, "optional": False, "tasks": ["А"]},
+            {"count": 2, "optional": False, "tasks": ["А", "А"]},
+            {"count": True, "optional": False, "tasks": ["А"]},
+            {"count": 1, "optional": "true", "tasks": ["А"]},
+            {"count": 1, "optional": False, "tasks": [""]},
+            {"count": 1, "optional": False, "tasks": [1]},
+        )
+        for group in groups:
+            with self.subTest(group=group), self.assertRaises(ValueError):
+                self.make_app({"common": [], "random_groups": [group]})
+
+    def test_multiple_choices_do_not_repeat_even_when_pool_contains_duplicates(self):
+        catalog = {
+            "common": [],
+            "random_groups": [
+                {"count": 2, "optional": False, "tasks": ["А", "А", "Б"]}
+            ],
+        }
+        client = self.make_app(catalog).test_client()
+        response = client.post("/api/tasks", json={})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual({task["text"] for task in response.json["tasks"]}, {"А", "Б"})
 
 
 if __name__ == "__main__":

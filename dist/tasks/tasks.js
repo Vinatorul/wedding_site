@@ -54,8 +54,15 @@ function createTaskItem(task) {
   const checkbox = item.querySelector("input");
   const label = item.querySelector("label");
   const button = item.querySelector("button");
+  const kind = item.querySelector(".task-kind");
   item.dataset.taskId = task.id;
   item.classList.toggle("is-completed", task.completed);
+  item.classList.toggle("is-optional", task.optional);
+  kind.id = `task-kind-${task.id}`;
+  kind.textContent = task.optional
+    ? "Необязательно · С нейронкой"
+    : "Обязательное";
+  checkbox.setAttribute("aria-describedby", kind.id);
   checkbox.id = `task-${task.id}`;
   checkbox.checked = task.completed;
   label.htmlFor = checkbox.id;
@@ -71,11 +78,21 @@ function renderTasks(state) {
   tasksIntro.hidden = state.assigned;
   tasksChecklist.hidden = !state.assigned;
   tasksList.replaceChildren(...state.tasks.map(createTaskItem));
-  const completed = state.tasks.filter((task) => task.completed).length;
-  tasksProgress.textContent =
-    completed === state.tasks.length && completed > 0
-      ? "Все задания выполнены!"
-      : `${completed} из ${state.tasks.length} выполнено`;
+  tasksProgress.textContent = taskProgress(state.tasks);
+}
+
+function taskProgress(tasks) {
+  const required = tasks.filter((task) => !task.optional);
+  const optional = tasks.filter((task) => task.optional);
+  const completed = required.filter((task) => task.completed).length;
+  const optionalCompleted = optional.filter((task) => task.completed).length;
+  const progress =
+    completed === required.length && completed > 0
+      ? "Все обязательные задания выполнены!"
+      : `Обязательные: ${completed} из ${required.length}`;
+  return optional.length
+    ? `${progress} · С нейронкой: ${optionalCompleted} из ${optional.length}`
+    : progress;
 }
 
 async function loadTasks() {

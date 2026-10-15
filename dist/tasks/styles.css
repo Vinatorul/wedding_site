@@ -137,8 +137,22 @@
   cursor: pointer;
 }
 .task-text {
+  display: block;
   overflow-wrap: anywhere;
+  white-space: pre-line;
   cursor: pointer;
+}
+.task-copy {
+  min-width: 0;
+}
+.task-kind {
+  margin-bottom: 6px;
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.task-item.is-optional .task-kind {
+  color: var(--muted);
 }
 .task-item.is-completed .task-text {
   color: var(--muted);

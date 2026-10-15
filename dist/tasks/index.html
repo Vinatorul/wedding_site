@@ -15,8 +15,8 @@
     />
     <link rel="icon" type="image/svg+xml" href="/assets/heart.svg" />
     <link rel="stylesheet" href="/styles.css?v=20261015-no-rsvp" />
-    <link rel="stylesheet" href="/tasks/styles.css?v=20261015-tasks" />
-    <script src="/tasks/tasks.js?v=20261015-tasks" defer></script>
+    <link rel="stylesheet" href="/tasks/styles.css?v=20261015-task-catalog" />
+    <script src="/tasks/tasks.js?v=20261015-task-catalog" defer></script>
   </head>
   <body>
     <div class="page-shell tasks-shell">
@@ -39,7 +39,10 @@
         >
           <span class="tasks-sticker heart-icon" aria-hidden="true"></span>
           <p class="tasks-intro-title">Начнём?</p>
-          <p>Нажми на кнопку, чтобы получить свой список.</p>
+          <p>
+            Шесть обязательных заданий и одно необязательное с нейронкой. Нажми
+            на кнопку, чтобы получить свой список.
+          </p>
           <button
             class="button button-accent tasks-get"
             id="get-tasks"
@@ -87,7 +90,10 @@
     <template id="task-template">
       <li class="task-item">
         <input class="task-checkbox" type="checkbox" />
-        <label class="task-text"></label>
+        <div class="task-copy">
+          <p class="task-kind"></p>
+          <label class="task-text"></label>
+        </div>
         <button class="task-action" type="button" data-task-action>
           Выполнил
         </button>
