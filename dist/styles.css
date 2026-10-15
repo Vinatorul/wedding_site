@@ -147,19 +147,6 @@ div[id] {
   display: inline-block;
   transform: rotate(-15deg);
 }
-.header-rsvp {
-  background: var(--ink);
-  color: white;
-  border-radius: 50%;
-  min-width: 112px;
-  padding: 10px 18px;
-  font-size: 14px;
-  transform: rotate(-5deg);
-  text-align: center;
-}
-.header-rsvp span {
-  margin-left: 8px;
-}
 .hero {
   position: relative;
   overflow: clip;
@@ -553,11 +540,6 @@ h1 > span:nth-child(3) {
 .button[aria-disabled="true"]:hover {
   transform: none;
 }
-#rsvp-form .button:disabled {
-  opacity: 0.65;
-  cursor: wait;
-  transform: none;
-}
 .button span {
   font-size: 22px;
   line-height: 1;
@@ -729,105 +711,6 @@ h1 > span:nth-child(3) {
 .team-social-link:hover {
   border-color: var(--accent-text);
 }
-.rsvp-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 105px;
-  padding: 0 44px 100px;
-}
-.rsvp-copy h2 {
-  transform: rotate(-5deg);
-  margin: 0 0 36px;
-}
-.rsvp-copy > p:last-of-type {
-  max-width: 290px;
-}
-form {
-  padding-top: 2px;
-}
-form > label,
-legend {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 0;
-  margin-bottom: 9px;
-}
-input:not([type="radio"]),
-select,
-textarea {
-  width: 100%;
-  padding: 13px 15px;
-  background: var(--field);
-  color: var(--ink);
-  border: 1px solid var(--field-border);
-  border-radius: 4px;
-  min-height: 50px;
-  font-size: 16px;
-  margin-bottom: 23px;
-}
-input::placeholder,
-textarea::placeholder {
-  color: var(--muted);
-  opacity: 1;
-}
-textarea {
-  resize: vertical;
-  min-height: 83px;
-  display: block;
-  margin-bottom: 16px;
-}
-fieldset {
-  border: 0;
-  margin: 0 0 23px;
-  padding: 0;
-  min-width: 0;
-}
-.attendance-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.attendance-options label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--field-border);
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  flex-grow: 1;
-}
-.attendance-options label:has(input:checked) {
-  border-color: var(--accent-text);
-  background: var(--accent-soft);
-}
-input[type="radio"] {
-  accent-color: var(--accent-text);
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  flex-shrink: 0;
-}
-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.optional {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 400;
-  float: right;
-}
-.form-status {
-  margin-top: 15px;
-  font-size: 14px;
-  color: var(--accent-text);
-}
-.form-status:empty {
-  display: none;
-}
 .footer {
   text-align: center;
   padding: 56px 0 30px;
@@ -896,11 +779,6 @@ input:disabled {
     padding: 55px 45px;
     gap: 35px;
   }
-  .rsvp-section {
-    gap: 65px;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
   .timeline li {
     grid-template-columns: 120px minmax(0, 1fr);
     gap: 20px;
@@ -931,10 +809,6 @@ input:disabled {
   }
   .wordmark {
     font-size: 20px;
-  }
-  .header-rsvp {
-    min-width: 104px;
-    font-size: 13px;
   }
   .hero {
     min-height: 0;
@@ -1111,27 +985,6 @@ input:disabled {
   }
   .details-copy p {
     font-size: 16px;
-  }
-  .rsvp-section {
-    grid-template-columns: 1fr;
-    gap: 30px;
-    padding: 0 8px 65px;
-  }
-  .rsvp-copy {
-    position: relative;
-  }
-  .rsvp-copy h2 {
-    margin: 0 0 29px;
-  }
-  .rsvp-copy > p:last-of-type {
-    max-width: 100%;
-  }
-  .attendance-options {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .attendance-options label {
-    padding: 12px;
   }
   .footer {
     padding-top: 37px;

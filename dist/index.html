@@ -18,9 +18,9 @@
       type="font/ttf"
       crossorigin
     />
-    <link rel="stylesheet" href="styles.css?v=20261005-team" />
-    <script src="content.js?v=20261015-flowers" defer></script>
-    <script src="main.js?v=20261004-rsvp" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261015-no-rsvp" />
+    <script src="content.js?v=20261015-no-rsvp" defer></script>
+    <script src="main.js?v=20261015-no-rsvp" defer></script>
   </head>
   <body>
     <div class="page-shell">
@@ -455,92 +455,6 @@
               </figure>
             </article>
           </div>
-        </section>
-
-        <section class="rsvp-section" id="rsvp" aria-labelledby="rsvp-title">
-          <div class="rsvp-copy">
-            <h2 id="rsvp-title">Ну что,<br />ты с нами?</h2>
-            <p data-content="rsvpIntro">
-              Дай знать, получится ли быть с нами в этот день. Это поможет нам
-              всё спланировать.
-            </p>
-          </div>
-          <form id="rsvp-form">
-            <label for="guest-name">Как тебя зовут?</label>
-            <input
-              id="guest-name"
-              name="name"
-              autocomplete="name"
-              placeholder="Имя и фамилия"
-              maxlength="100"
-              required
-            />
-            <label for="guest-companion">С кем ты придешь?</label>
-            <input
-              id="guest-companion"
-              name="companion"
-              type="text"
-              placeholder="Перечисли всех через запятую"
-              maxlength="200"
-            />
-            <fieldset>
-              <legend>Получится прийти?</legend>
-              <div class="attendance-options">
-                <label
-                  ><input
-                    type="radio"
-                    name="attendance"
-                    value="yes"
-                    required
-                    checked
-                  /><span>Конечно, с утра до вечера с вами!</span></label
-                ><label
-                  ><input
-                    type="radio"
-                    name="attendance"
-                    value="ceremony"
-                  /><span>Приду только на роспись</span></label
-                ><label
-                  ><input type="radio" name="attendance" value="buffet" /><span
-                    >Приду к фуршету</span
-                  ></label
-                ><label
-                  ><input type="radio" name="attendance" value="banquet" /><span
-                    >Приду к началу банкета</span
-                  ></label
-                ><label
-                  ><input type="radio" name="attendance" value="no" /><span
-                    >Увы, не смогу</span
-                  ></label
-                >
-              </div>
-            </fieldset>
-            <label for="guest-drink">Что будешь пить?</label>
-            <input
-              id="guest-drink"
-              name="drink"
-              type="text"
-              maxlength="300"
-              placeholder="Любимые напитки"
-            />
-            <label for="guest-food">Что будешь или не будешь есть?</label>
-            <textarea
-              id="guest-food"
-              name="food"
-              rows="4"
-              maxlength="1000"
-              placeholder="Например, аллергии или пожелания по еде"
-            ></textarea>
-            <button class="button button-black" type="submit">
-              Отправить ответ <span aria-hidden="true">↗</span>
-            </button>
-            <p
-              class="form-status"
-              id="form-status"
-              role="status"
-              aria-live="polite"
-            ></p>
-          </form>
         </section>
 
         <footer class="footer">
