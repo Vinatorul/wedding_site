@@ -13,7 +13,7 @@ RUN python -m pip install --no-cache-dir --index-url https://pypi.org/simple -r 
     && mkdir -m 0700 /data \
     && chown wedding:wedding /data
 
-COPY app.py .
+COPY app.py tasks.py task_catalog.json .
 USER 10001:10001
 EXPOSE 8000
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-", "--no-control-socket", "app:create_app()"]

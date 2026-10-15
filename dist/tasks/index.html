@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#e2d9d6" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Твои задания — Саша + Соня</title>
+    <link
+      rel="preload"
+      href="/assets/CCZoinks-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="icon" type="image/svg+xml" href="/assets/heart.svg" />
+    <link rel="stylesheet" href="/styles.css?v=20261015-no-rsvp" />
+    <link rel="stylesheet" href="/tasks/styles.css?v=20261015-tasks" />
+    <script src="/tasks/tasks.js?v=20261015-tasks" defer></script>
+  </head>
+  <body>
+    <div class="page-shell tasks-shell">
+      <header class="tasks-header">
+        <p class="tasks-couple">
+          Саша + Соня <span class="heart-icon" aria-hidden="true"></span>
+        </p>
+        <p class="tasks-date">16.10.2026</p>
+      </header>
+      <main class="tasks-main" id="tasks-main" aria-busy="true">
+        <div class="tasks-heading">
+          <span class="tasks-star" aria-hidden="true">✳</span>
+          <h1>Твои задания</h1>
+          <p>Отмечай выполненное — всё сохранится.</p>
+        </div>
+        <section
+          class="tasks-intro"
+          id="tasks-intro"
+          aria-label="Получить задания"
+        >
+          <span class="tasks-sticker heart-icon" aria-hidden="true"></span>
+          <p class="tasks-intro-title">Начнём?</p>
+          <p>Нажми на кнопку, чтобы получить свой список.</p>
+          <button
+            class="button button-accent tasks-get"
+            id="get-tasks"
+            type="button"
+            disabled
+          >
+            Получить задания
+          </button>
+        </section>
+        <section
+          class="tasks-checklist"
+          id="tasks-checklist"
+          aria-labelledby="checklist-title"
+          hidden
+        >
+          <div class="tasks-list-heading">
+            <h2 id="checklist-title" tabindex="-1">Твой список</h2>
+            <p class="tasks-progress" id="tasks-progress"></p>
+          </div>
+          <ul class="tasks-list" id="tasks-list"></ul>
+        </section>
+        <div class="tasks-feedback">
+          <p
+            class="tasks-status"
+            id="tasks-status"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            Загружаем задания…
+          </p>
+          <button class="tasks-retry" id="retry-tasks" type="button" hidden>
+            Попробовать ещё раз
+          </button>
+        </div>
+        <p class="tasks-note">Список и отметки сохраняются в этом браузере.</p>
+        <noscript>
+          <p class="tasks-noscript">
+            Чтобы получить задания и отмечать выполненное, нужно включить
+            JavaScript в браузере.
+          </p>
+        </noscript>
+      </main>
+    </div>
+    <template id="task-template">
+      <li class="task-item">
+        <input class="task-checkbox" type="checkbox" />
+        <label class="task-text"></label>
+        <button class="task-action" type="button" data-task-action>
+          Выполнил
+        </button>
+      </li>
+    </template>
+  </body>
+</html>

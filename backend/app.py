@@ -6,6 +6,11 @@ from pathlib import Path
 from flask import Flask, current_app, jsonify, request
 from werkzeug.exceptions import HTTPException
 
+if __package__:
+    from .tasks import initialize_tasks_database, register_tasks
+else:
+    from tasks import initialize_tasks_database, register_tasks
+
 FIELD_LIMITS = {
     "name": 100,
     "companion": 200,
@@ -34,6 +39,7 @@ def initialize_database(database):
     with closing(sqlite3.connect(database, timeout=5)) as connection:
         with connection:
             connection.execute(SCHEMA)
+            initialize_tasks_database(connection)
 
 
 def validate_rsvp(payload):
@@ -99,7 +105,7 @@ def handle_http_error(error):
     ), error.code
 
 
-def create_app(database_path=None, site_root=None):
+def create_app(database_path=None, site_root=None, task_catalog=None):
     default_site = Path(__file__).resolve().parents[1] / "dist"
     site_root = site_root or os.environ.get("SITE_ROOT", str(default_site))
     app = Flask(__name__, static_folder=site_root, static_url_path="")
@@ -113,4 +119,5 @@ def create_app(database_path=None, site_root=None):
     app.add_url_rule("/api/rsvp", view_func=submit_rsvp, methods=["POST"])
     app.add_url_rule("/api/health", view_func=health, methods=["GET"])
     app.register_error_handler(HTTPException, handle_http_error)
+    register_tasks(app, task_catalog)
     return app
