@@ -15,8 +15,8 @@
     />
     <link rel="icon" type="image/svg+xml" href="/assets/heart.svg" />
     <link rel="stylesheet" href="/styles.css?v=20261015-no-rsvp" />
-    <link rel="stylesheet" href="/tasks/styles.css?v=20261015-tasks-clean" />
-    <script src="/tasks/tasks.js?v=20261015-tasks-clean" defer></script>
+    <link rel="stylesheet" href="/tasks/styles.css?v=20261016-tasks-buttons" />
+    <script src="/tasks/tasks.js?v=20261016-tasks-buttons" defer></script>
   </head>
   <body>
     <div class="page-shell tasks-shell">
@@ -68,8 +68,10 @@
     </div>
     <template id="task-template">
       <li class="task-item">
-        <input class="task-checkbox" type="checkbox" />
-        <label class="task-text"></label>
+        <div class="task-text">
+          <span class="task-optional" hidden>Необязательное</span>
+          <span class="task-description"></span>
+        </div>
         <button class="task-action" type="button" data-task-action>
           Выполнил
         </button>

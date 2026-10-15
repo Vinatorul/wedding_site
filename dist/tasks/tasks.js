@@ -15,7 +15,7 @@ function setTasksBusy(busy) {
   tasksMain.setAttribute("aria-busy", String(busy));
   getTasksButton.disabled = busy || !taskState;
   retryTasksButton.disabled = busy;
-  tasksList.querySelectorAll("input, button").forEach((control) => {
+  tasksList.querySelectorAll("button").forEach((control) => {
     control.disabled = busy;
   });
 }
@@ -51,19 +51,16 @@ async function requestTasks(url, method = "GET", payload) {
 
 function createTaskItem(task) {
   const item = taskTemplate.content.firstElementChild.cloneNode(true);
-  const checkbox = item.querySelector("input");
-  const label = item.querySelector("label");
+  const text = item.querySelector(".task-text");
   const button = item.querySelector("button");
   item.dataset.taskId = task.id;
   item.classList.toggle("is-completed", task.completed);
   item.classList.toggle("is-optional", task.optional);
-  checkbox.id = `task-${task.id}`;
-  checkbox.checked = task.completed;
-  label.htmlFor = checkbox.id;
-  label.id = `task-text-${task.id}`;
-  label.textContent = task.text;
+  text.id = `task-text-${task.id}`;
+  text.querySelector(".task-optional").hidden = !task.optional;
+  text.querySelector(".task-description").textContent = task.text;
   button.textContent = task.completed ? "Отменить" : "Выполнил";
-  button.setAttribute("aria-describedby", label.id);
+  button.setAttribute("aria-describedby", text.id);
   return item;
 }
 
@@ -98,7 +95,7 @@ async function assignTasks() {
   showTasksStatus("");
   try {
     renderTasks(await requestTasks("/api/tasks", "POST", {}));
-    tasksList.querySelector("input")?.focus({ preventScroll: true });
+    tasksList.querySelector("button")?.focus({ preventScroll: true });
   } catch (error) {
     if (error.status === 409) showTasksStatus(error.message);
     else
@@ -112,32 +109,22 @@ async function assignTasks() {
   }
 }
 
-async function updateTask(id, completed, control = "button") {
+async function updateTask(id, completed) {
   if (tasksBusy) return;
   setTasksBusy(true);
   showTasksStatus("");
   try {
     renderTasks(await requestTasks(`/api/tasks/${id}`, "PATCH", { completed }));
     tasksList
-      .querySelector(`[data-task-id="${id}"] ${control}`)
+      .querySelector(`[data-task-id="${id}"] button`)
       ?.focus({ preventScroll: true });
   } catch {
     showTasksError("Не удалось сохранить отметку. Попробуй ещё раз.", () =>
-      updateTask(id, completed, control),
+      updateTask(id, completed),
     );
   } finally {
     setTasksBusy(false);
   }
-}
-
-function handleTaskChange(event) {
-  const checkbox = event.target.closest(".task-checkbox");
-  if (!checkbox) return;
-  const id = Number(checkbox.closest("[data-task-id]").dataset.taskId);
-  const task = taskState.tasks.find((entry) => entry.id === id);
-  const completed = checkbox.checked;
-  checkbox.checked = task.completed;
-  updateTask(id, completed, "input");
 }
 
 function handleTaskClick(event) {
@@ -150,6 +137,5 @@ function handleTaskClick(event) {
 
 getTasksButton.addEventListener("click", assignTasks);
 retryTasksButton.addEventListener("click", () => retryAction());
-tasksList.addEventListener("change", handleTaskChange);
 tasksList.addEventListener("click", handleTaskClick);
 loadTasks();
