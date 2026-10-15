@@ -59,7 +59,7 @@ function createTaskItem(task) {
   text.id = `task-text-${task.id}`;
   text.querySelector(".task-optional").hidden = !task.optional;
   text.querySelector(".task-description").textContent = task.text;
-  button.textContent = task.completed ? "Отменить" : "Выполнил";
+  button.textContent = task.completed ? "Отменить" : "Готово";
   button.setAttribute("aria-describedby", text.id);
   return item;
 }
